@@ -72,12 +72,15 @@ pre.code{background:var(--field);border:1px solid var(--line);border-radius:8px;
 .viewer{padding-block:24px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0;overflow-x:auto}
 .sheets{display:flex;flex-direction:column;align-items:center;gap:24px;width:max-content;margin:0 auto}
 .pagelabel{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;align-self:flex-start;margin-bottom:-16px}
-.auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);background:var(--bg)}
-.hero{position:relative;color:#fff;overflow:hidden;background:#0f2a4a;display:flex}
-.hero>svg.scene{position:absolute;inset:0;width:100%;height:100%}
-.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,20,36,.15) 0%,rgba(8,20,36,.55) 45%,rgba(8,20,36,.88) 100%)}
+.auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;background:var(--bg)}
+.herobg{grid-column:1;grid-row:1/3;position:relative;overflow:hidden;background:#0f2a4a}
+.herobg>svg.scene{position:absolute;inset:0;width:100%;height:100%}
+.hero{grid-column:1;grid-row:1;position:relative;z-index:1;color:#fff;display:flex}
+.more{grid-column:1;grid-row:2;position:relative;z-index:1;color:#fff;display:flex;flex-direction:column;gap:22px;max-width:720px;
+  padding-block:22px 40px;padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:28px}
+.herobg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,20,36,.15) 0%,rgba(8,20,36,.55) 45%,rgba(8,20,36,.88) 100%)}
 .hero-in{position:relative;z-index:1;display:flex;flex-direction:column;gap:22px;justify-content:flex-end;width:100%;max-width:720px;
-  padding-block:48px 40px;padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:28px}
+  padding-block:48px 0;padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:28px}
 .mk{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.02em;margin-bottom:auto}
 .mk i{width:36px;height:36px;border-radius:9px;background:#fff;color:#0f2a4a;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:14px}
 .hero h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:clamp(30px,4.2vw,50px);line-height:1.08;margin:0;text-wrap:balance;max-width:16ch}
@@ -90,9 +93,13 @@ pre.code{background:var(--field);border:1px solid var(--line);border-radius:8px;
 .dest figure{margin:0;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18)}
 .dest svg{display:block;width:100%;height:auto;aspect-ratio:4/3}
 .dest figcaption{font-size:12px;padding:7px 10px;color:rgba(255,255,255,.9)}
-.authside{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding-block:40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.authside{grid-column:2;grid-row:1/3;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding-block:40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .free{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
-@media (max-width:900px){.auth{grid-template-columns:minmax(0,1fr)}.hero-in{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px}.mk{margin-bottom:60px}}
+@media (max-width:900px){.auth{grid-template-columns:minmax(0,1fr);grid-template-rows:auto}
+  .herobg{grid-row:1}.hero{grid-row:1}.authside{grid-column:1;grid-row:2;padding-block:20px 28px}.more{grid-row:3;max-width:none;background:#0f2a4a;padding-block:28px 36px}
+  .hero-in,.more{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .hero-in{padding-block:22px 26px;gap:14px}.mk{margin-bottom:28px}.hero .sub{font-size:15px}}
+@media (max-width:520px){.hero h1{font-size:28px}.authbox{padding:22px 16px;border-radius:12px}.authside .free{order:2}}
 @media (max-width:520px){.feat{grid-template-columns:1fr}.dest figcaption{font-size:11px;padding:6px}}
 .authbox{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px 24px;display:flex;flex-direction:column;gap:14px}
 .authbox h1{font-size:22px;margin:0;line-height:1.2}
@@ -109,7 +116,35 @@ pre.code{background:var(--field);border:1px solid var(--line);border-radius:8px;
 .who b{color:var(--fg)}
 .idcard{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);background:var(--field);border-radius:10px;padding:12px 14px}
 .idcard b{font-size:18px;letter-spacing:.04em;font-variant-numeric:tabular-nums}
-@media (max-width:860px){.app{grid-template-columns:minmax(0,1fr)}.editor{border-right:0;border-bottom:1px solid var(--line)}}
+.mbar{display:none}
+.sheets{zoom:var(--fit,1)}
+.pagelabel{font-size:calc(11px / var(--fit,1))}
+@media screen and (max-width:860px){.app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr;padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
+  .editor{border-right:0}
+  .topbar{flex-wrap:nowrap;padding-block:8px;gap:8px}
+  .brand{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand small{display:none}
+  .actions{flex-wrap:nowrap;align-items:center}
+  #btnSave,#btnPdf{display:none}
+  .actions button{padding:8px 10px;font-size:13px}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:0;padding-top:4px;position:sticky;top:calc(var(--tb,56px) + env(safe-area-inset-top,0px));background:var(--panel);z-index:4}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:none;white-space:nowrap;padding:12px 14px;font-size:14px}
+  input,textarea,select{font-size:16px;min-height:44px;padding:10px 11px}
+  textarea{min-height:96px}
+  button,.btn{min-height:44px}
+  .x{width:40px}
+  .pricetbl{grid-template-columns:minmax(0,1fr) 54px 86px 40px}
+  .viewer{padding:12px 12px 24px}.sheets{gap:16px}
+  [data-mv="edit"] .viewer,[data-mv="prev"] .editor{display:none}
+  .mbar{display:grid;grid-template-columns:1fr 1fr 1fr 1.3fr;gap:6px;position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);border-top:1px solid var(--line);
+    padding:8px max(10px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));box-shadow:0 -4px 16px rgba(0,0,0,.08)}
+  .mbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;font-size:12px;min-height:52px}
+  .mbar svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .mbar [aria-pressed="true"]{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .toast{bottom:calc(80px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 32px);text-align:center}
+}
+@media screen and (max-width:520px){.who{display:none}.pricetbl{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 40px;row-gap:6px}.pricetbl>:nth-child(4n+1){grid-column:1/-1}.pricetbl>input:nth-child(4n+1){margin-top:8px}.pricetbl>.h:first-child{display:none}.grid3{grid-template-columns:1fr 1fr}.grid3>:first-child{grid-column:1/-1}.themes{gap:8px}}
+@media (max-width:360px){.grid2{grid-template-columns:1fr}}
 
 /* ============ ITINERARY SHEETS (always paper, colors per theme) ============ */
 .sheet{width:210mm;min-height:297mm;background:var(--paper);color:var(--ink);font-family:var(--fb);font-size:10.5pt;line-height:1.5;
@@ -129,8 +164,8 @@ pre.code{background:var(--field);border:1px solid var(--line);border-radius:8px;
 .s-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10mm;border-bottom:1.5px solid var(--a);padding-bottom:4mm}
 .eyebrow{font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:var(--a);font-weight:700}
 .s-foot{display:flex;justify-content:space-between;gap:6mm;font-size:8pt;color:#6b6b6b;border-top:1px solid var(--soft);padding:4mm 16mm 6mm;margin-top:auto}
-.logo{max-height:16mm;max-width:45mm;object-fit:contain}
-.logobadge{width:14mm;height:14mm;border-radius:50%;background:var(--p);color:#fff;display:grid;place-items:center;font-family:var(--fd);font-size:15pt}
+.logo{max-height:22mm;max-width:62mm;object-fit:contain}
+.logobadge{width:18mm;height:18mm;border-radius:50%;background:var(--p);color:#fff;display:grid;place-items:center;font-family:var(--fd);font-size:15pt}
 .ph{background:linear-gradient(135deg,var(--p),var(--a));display:grid;place-items:center;color:rgba(255,255,255,.85);font-family:var(--fd);font-size:13pt;text-align:center;padding:6mm}
 .ph small{display:block;font-family:var(--fb);font-size:7pt;letter-spacing:.15em;text-transform:uppercase;opacity:.8;margin-top:2mm}
 img.cov,.ph.cov{width:100%;height:100%;object-fit:cover}
@@ -141,7 +176,7 @@ img.cov,.ph.cov{width:100%;height:100%;object-fit:cover}
 .cv-photo>img,.cv-photo>.ph{position:absolute;inset:0;width:100%;height:100%}
 .cv-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.55))}
 .cv-brand{position:absolute;top:12mm;left:14mm;right:14mm;display:flex;justify-content:space-between;align-items:center}
-.cv-brand .logo{background:rgba(255,255,255,.92);padding:2.5mm 4mm;border-radius:2mm}
+.cv-brand .logo{background:rgba(255,255,255,.92);padding:3mm 5mm;border-radius:2mm;max-height:30mm;max-width:80mm}
 .cv-title{position:absolute;left:14mm;right:14mm;bottom:12mm;color:#fff}
 .cv-title .eyebrow{color:#fff;opacity:.9}
 .cv-title h1{color:#fff;font-size:38pt;margin-top:2mm}
@@ -167,6 +202,7 @@ img.cov,.ph.cov{width:100%;height:100%;object-fit:cover}
 .split .vfacts span{display:block;font-size:7pt;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
 .split .vfacts b{font-size:12pt}
 .split .cv-logo{background:#fff;border-radius:2mm;padding:3mm;align-self:flex-start}
+.split .cv-logo .logo{max-height:30mm;max-width:58mm}
 .split .cv-foot{padding:8mm 10mm;display:flex;justify-content:space-between;gap:6mm;font-size:9pt}
 
 /* overview */
@@ -215,10 +251,11 @@ ol.terms{margin:0;padding-left:5mm;font-size:9pt;display:flex;flex-direction:col
   @page{size:A4;margin:0}
   html,body{background:#fff!important}
   :root{padding:0!important}
-  .topbar,.editor,.pagelabel,.toast,.auth{display:none!important}
+  .topbar,.editor,.mbar,.pagelabel,.toast,.auth{display:none!important}
   .app{display:block}
   .viewer{padding:0!important;overflow:visible}
-  .sheets{gap:0;width:auto}
+  .sheets{gap:0;width:auto;zoom:1!important}
+  .mbar{display:none!important}
   .sheet{box-shadow:none;min-height:296mm;break-after:page;page-break-after:always;overflow:visible}
   .sheet:last-child{break-after:auto}
 }
@@ -227,12 +264,15 @@ ol.terms{margin:0;padding-left:5mm;font-size:9pt;display:flex;flex-direction:col
 <body>
 
 <div class="auth" id="auth" hidden>
+  <div class="herobg" aria-hidden="true"><svg class="scene" id="heroScene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice"></svg></div>
   <section class="hero" aria-label="About MK Itinerary Maker">
-    <svg class="scene" id="heroScene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
     <div class="hero-in">
       <div class="mk"><i>MK</i>MK Solutions</div>
       <h1>Beautiful travel itineraries in minutes</h1>
       <p class="sub">A free tool for travel agents. Add your logo and details once, enter the trip, and send your guest a polished 6-page itinerary with photos, quotation and policies.</p>
+    </div>
+  </section>
+  <section class="more" aria-label="What is included">
       <ul class="feat">
         <li><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h6M7 13h10M7 17h4"/></svg><span><b>Your brand on every page</b>Logo, company details and MK Agent ID</span></li>
         <li><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg><span><b>Day-wise plan with photos</b>Meals, hotel stay and dates for each day</span></li>
@@ -248,7 +288,6 @@ ol.terms{margin:0;padding-left:5mm;font-size:9pt;display:flex;flex-direction:col
         <figure><svg id="sc2" viewBox="0 0 400 300" aria-hidden="true"></svg><figcaption>Hill station escapes</figcaption></figure>
         <figure><svg id="sc3" viewBox="0 0 400 300" aria-hidden="true"></svg><figcaption>Island beaches</figcaption></figure>
       </div>
-    </div>
   </section>
   <div class="authside"><span class="free">100% free for travel agents</span><div class="authbox" id="authbox"></div></div>
 </div>
@@ -271,6 +310,12 @@ ol.terms{margin:0;padding-left:5mm;font-size:9pt;display:flex;flex-direction:col
 
   <main class="viewer"><div class="sheets" id="sheets"></div></main>
 </div>
+<nav class="mbar" id="mbar" aria-label="Quick actions" hidden>
+  <button type="button" id="mvEdit" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>Edit</button>
+  <button type="button" id="mvPreview" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Preview</button>
+  <button type="button" id="mSave"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>Save</button>
+  <button type="button" id="mPdf" class="primary"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Download PDF</button>
+</nav>
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -395,7 +440,8 @@ function IMG(label,path,id){const v=getPath(path.startsWith("profile.")?{profile
   return `<div class="f"><span class="hint" style="font-weight:600">${esc(label)}</span><div class="imgrow">${v?`<img class="thumb" src="${v}" alt="">`:`<span class="thumb"></span>`}
   <input id="${id}" type="file" accept="image/*" data-img="${path}">${v?`<button type="button" class="ghost x" data-clear="${path}" aria-label="Remove image">✕</button>`:""}</div></div>`;}
 
-function renderTabs(){document.getElementById("tabs").innerHTML=TABS.map(([k,l])=>`<button type="button" role="tab" class="tab" aria-selected="${k===tab}" data-tab="${k}">${l}</button>`).join("");}
+function renderTabs(){const el=document.getElementById("tabs");el.innerHTML=TABS.map(([k,l])=>`<button type="button" role="tab" class="tab" aria-selected="${k===tab}" data-tab="${k}">${l}</button>`).join("");
+  const on=el.querySelector('[aria-selected="true"]');if(on&&el.scrollWidth>el.clientWidth)el.scrollLeft=on.offsetLeft-(el.clientWidth-on.offsetWidth)/2;}
 function renderPane(){const P=document.getElementById("pane");let h="";
  if(tab==="profile"){h=`<div class="idcard"><div><span class="hint">Your MK Agent ID</span><br><b>${esc(agentCode)}</b></div><span class="hint">${esc(user?.email||"")}</span></div>
   <p class="hint">Fill this once. Your logo, contact, bank details and default policies are saved to your account and added to every new itinerary.</p>
@@ -460,7 +506,7 @@ function updateSum(){const b=document.getElementById("sumbox");if(!b)return;cons
 function photo(src,label,cls){return src?`<img class="${cls||""}" src="${src}" alt="${esc(label)}">`:`<div class="ph ${cls||""}">${esc(label||"Add a photo")}<small>Photo</small></div>`;}
 function logo(){return profile.logo?`<img class="logo" src="${profile.logo}" alt="${esc(profile.company)}">`:`<div class="logobadge">${esc((profile.company||"T").trim().charAt(0))}</div>`;}
 function head(eyebrow,title){return `<div class="s-head"><div><div class="eyebrow">${esc(eyebrow)}</div><h2>${esc(title)}</h2></div>${logo()}</div>`;}
-function foot(n,total){return `<div class="s-foot"><span>${esc(profile.company)} · ${esc(profile.phone)} · ${esc(profile.email)}</span><span>${agentCode?"Agent ID "+esc(agentCode)+" · ":""}${profile.license?"Lic. "+esc(profile.license)+" · ":""}Page ${n} of ${total}</span></div>`;}
+function foot(n,total){return `<div class="s-foot"><span>${esc(profile.company)} · ${esc(profile.phone)} · ${esc(profile.email)}</span><span>${profile.license?"Lic. "+esc(profile.license)+" · ":""}Page ${n} of ${total}</span></div>`;}
 function renderSheets(){
   const th=THEMES.find(t=>t.id===trip.theme)||THEMES[0];const T=totals();const n=nights();
   const dayChunks=[];for(let i=0;i<trip.days.length;i+=3)dayChunks.push(trip.days.slice(i,i+3).map((d,k)=>[d,i+k]));
@@ -513,7 +559,7 @@ function renderSheets(){
    <div><h3 style="margin-bottom:3mm">Cancellation policy</h3><table class="t"><tbody>${lines(trip.cancellation).map(x=>{const m=x.split(":");return `<tr><td>${esc(m.length>1?m[0]:x)}</td><td class="num"><b>${esc(m.length>1?m.slice(1).join(":"):"")}</b></td></tr>`}).join("")}</tbody></table></div>
    <div><h3 style="margin-bottom:3mm">Terms & conditions</h3><ol class="terms">${lines(trip.terms).map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>
    <div class="sign"><div class="contact" style="grid-template-columns:1fr"><div><span>Office</span>${esc(profile.address)}</div>${profile.gst?`<div><span>GSTIN</span>${esc(profile.gst)}</div>`:""}</div>
-   <div class="line">For <b>${esc(profile.company)}</b><br>${esc(profile.signName)}${agentCode?`<br><span style="color:#777;font-size:8pt">MK Agent ID ${esc(agentCode)}</span>`:""}</div></div>
+   <div class="line">For <b>${esc(profile.company)}</b><br>${esc(profile.signName)}</div></div>
    </div>${foot(pg,total)}</section>`]);
   document.getElementById("sheets").innerHTML=out.map(([l,h],i)=>`<div class="pagelabel">Page ${i+1} · ${esc(l)}</div>${h}`).join("");
 }
@@ -545,6 +591,18 @@ document.getElementById("btnNew").onclick=()=>{trip=blankTrip(profile);tab="trip
 function busy(fn){fn().then(()=>{renderPane();refresh();}).catch(e=>toast("Something went wrong: "+e.message));}
 document.getElementById("btnSave").onclick=()=>busy(async()=>{await store.saveTrip(trip);tripsMeta=await store.listTrips();toast("Trip saved to your account");});
 document.getElementById("btnOut").onclick=async()=>{await store.logout();user=null;showAuth("login");};
+// phone layout: Edit / Preview switch, sheets scaled to the screen width
+function fitSheets(){const v=document.querySelector(".viewer"),sh=document.getElementById("sheets");const cs=getComputedStyle(v);
+  const w=v.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);if(w<=0)return;
+  const f=Math.min(1,w/(210*96/25.4));sh.style.setProperty("--fit",f.toFixed(4));
+  const tb=document.querySelector(".topbar");document.documentElement.style.setProperty("--tb",tb.offsetHeight+"px");}
+function setMode(m){document.body.dataset.mv=m;document.getElementById("mvEdit").setAttribute("aria-pressed",m==="edit");document.getElementById("mvPreview").setAttribute("aria-pressed",m==="prev");fitSheets();window.scrollTo(0,0);}
+document.body.dataset.mv="edit";
+document.getElementById("mvEdit").onclick=()=>setMode("edit");
+document.getElementById("mvPreview").onclick=()=>setMode("prev");
+document.getElementById("mSave").onclick=()=>document.getElementById("btnSave").click();
+document.getElementById("mPdf").onclick=()=>document.getElementById("btnPdf").click();
+addEventListener("resize",fitSheets);
 document.getElementById("btnPdf").onclick=()=>{const before=Date.now();window.print();if(Date.now()-before<50)toast("If no print window opened, open this tool from your website to save the PDF.");};
 
 /* ---------- illustrated travel scenes for the login page ---------- */
@@ -576,7 +634,7 @@ scene("backwater","heroScene");scene("backwater","sc1");scene("hills","sc2");sce
 
 /* ---------- register / login ---------- */
 let authMode="login",authMsg="";
-function showAuth(mode,msg,ok){authMode=mode||authMode;document.getElementById("app").hidden=true;document.getElementById("auth").hidden=false;
+function showAuth(mode,msg,ok){authMode=mode||authMode;document.getElementById("app").hidden=true;document.getElementById("mbar").hidden=true;document.getElementById("auth").hidden=false;
   const A=document.getElementById("authbox");const keep={};A.querySelectorAll("input:not([type=password])").forEach(i=>keep[i.name]=i.value);const m=msg?`<p class="msg ${ok?"ok":"err"}" role="status">${esc(msg)}</p>`:"";
   const tabsH=(authMode==="login"||authMode==="register")?`<div class="authtabs" role="tablist"><button type="button" role="tab" aria-selected="${authMode==="login"}" data-auth="login">Log in</button><button type="button" role="tab" aria-selected="${authMode==="register"}" data-auth="register">Register free</button></div>`:"";
   let f="";
@@ -607,7 +665,7 @@ async function enterApp(u){user=u;const a=await store.agent()||{};agentCode=a.ag
   profile=Object.assign(clone(DEFAULT_PROFILE),{company:a.company||DEFAULT_PROFILE.company,signName:a.name||DEFAULT_PROFILE.signName,phone:a.phone||DEFAULT_PROFILE.phone,email:a.email||u.email||DEFAULT_PROFILE.email},a.profile||{});
   tripsMeta=await store.listTrips();trip=LS.get("nk.current."+user.id,null)||sampleTrip(profile);
   document.getElementById("who").innerHTML=`<b>${esc(profile.company)}</b><span>Agent ID ${esc(agentCode)}</span>`;
-  document.getElementById("auth").hidden=true;document.getElementById("app").hidden=false;renderTabs();renderPane();renderSheets();}
+  document.getElementById("auth").hidden=true;document.getElementById("app").hidden=false;document.getElementById("mbar").hidden=false;renderTabs();renderPane();renderSheets();setMode("edit");}
 
 (async()=>{if(sb)sb.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY")showAuth("newpass","Choose a new password.",true);});
   try{const u=await store.current();if(u&&!location.hash.includes("type=recovery"))await enterApp(u);else if(!u)showAuth("login");}catch(e){showAuth("login",e.message);}})();
