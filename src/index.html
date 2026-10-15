@@ -123,8 +123,8 @@ pre.code{background:var(--field);border:1px solid var(--line);border-radius:8px;
 .s-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10mm;border-bottom:1.5px solid var(--a);padding-bottom:4mm}
 .eyebrow{font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:var(--a);font-weight:700}
 .s-foot{display:flex;justify-content:space-between;gap:6mm;font-size:8pt;color:#6b6b6b;border-top:1px solid var(--soft);padding:4mm 16mm 6mm;margin-top:auto}
-.logo{max-height:16mm;max-width:45mm;object-fit:contain}
-.logobadge{width:14mm;height:14mm;border-radius:50%;background:var(--p);color:#fff;display:grid;place-items:center;font-family:var(--fd);font-size:15pt}
+.logo{max-height:22mm;max-width:62mm;object-fit:contain}
+.logobadge{width:18mm;height:18mm;border-radius:50%;background:var(--p);color:#fff;display:grid;place-items:center;font-family:var(--fd);font-size:15pt}
 .ph{background:linear-gradient(135deg,var(--p),var(--a));display:grid;place-items:center;color:rgba(255,255,255,.85);font-family:var(--fd);font-size:13pt;text-align:center;padding:6mm}
 .ph small{display:block;font-family:var(--fb);font-size:7pt;letter-spacing:.15em;text-transform:uppercase;opacity:.8;margin-top:2mm}
 img.cov,.ph.cov{width:100%;height:100%;object-fit:cover}
@@ -135,7 +135,7 @@ img.cov,.ph.cov{width:100%;height:100%;object-fit:cover}
 .cv-photo>img,.cv-photo>.ph{position:absolute;inset:0;width:100%;height:100%}
 .cv-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.55))}
 .cv-brand{position:absolute;top:12mm;left:14mm;right:14mm;display:flex;justify-content:space-between;align-items:center}
-.cv-brand .logo{background:rgba(255,255,255,.92);padding:2.5mm 4mm;border-radius:2mm}
+.cv-brand .logo{background:rgba(255,255,255,.92);padding:3mm 5mm;border-radius:2mm;max-height:30mm;max-width:80mm}
 .cv-title{position:absolute;left:14mm;right:14mm;bottom:12mm;color:#fff}
 .cv-title .eyebrow{color:#fff;opacity:.9}
 .cv-title h1{color:#fff;font-size:38pt;margin-top:2mm}
@@ -161,6 +161,7 @@ img.cov,.ph.cov{width:100%;height:100%;object-fit:cover}
 .split .vfacts span{display:block;font-size:7pt;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
 .split .vfacts b{font-size:12pt}
 .split .cv-logo{background:#fff;border-radius:2mm;padding:3mm;align-self:flex-start}
+.split .cv-logo .logo{max-height:30mm;max-width:58mm}
 .split .cv-foot{padding:8mm 10mm;display:flex;justify-content:space-between;gap:6mm;font-size:9pt}
 
 /* overview */
@@ -452,7 +453,7 @@ function updateSum(){const b=document.getElementById("sumbox");if(!b)return;cons
 function photo(src,label,cls){return src?`<img class="${cls||""}" src="${src}" alt="${esc(label)}">`:`<div class="ph ${cls||""}">${esc(label||"Add a photo")}<small>Photo</small></div>`;}
 function logo(){return profile.logo?`<img class="logo" src="${profile.logo}" alt="${esc(profile.company)}">`:`<div class="logobadge">${esc((profile.company||"T").trim().charAt(0))}</div>`;}
 function head(eyebrow,title){return `<div class="s-head"><div><div class="eyebrow">${esc(eyebrow)}</div><h2>${esc(title)}</h2></div>${logo()}</div>`;}
-function foot(n,total){return `<div class="s-foot"><span>${esc(profile.company)} · ${esc(profile.phone)} · ${esc(profile.email)}</span><span>${agentCode?"Agent ID "+esc(agentCode)+" · ":""}${profile.license?"Lic. "+esc(profile.license)+" · ":""}Page ${n} of ${total}</span></div>`;}
+function foot(n,total){return `<div class="s-foot"><span>${esc(profile.company)} · ${esc(profile.phone)} · ${esc(profile.email)}</span><span>${profile.license?"Lic. "+esc(profile.license)+" · ":""}Page ${n} of ${total}</span></div>`;}
 function renderSheets(){
   const th=THEMES.find(t=>t.id===trip.theme)||THEMES[0];const T=totals();const n=nights();
   const dayChunks=[];for(let i=0;i<trip.days.length;i+=3)dayChunks.push(trip.days.slice(i,i+3).map((d,k)=>[d,i+k]));
@@ -505,7 +506,7 @@ function renderSheets(){
    <div><h3 style="margin-bottom:3mm">Cancellation policy</h3><table class="t"><tbody>${lines(trip.cancellation).map(x=>{const m=x.split(":");return `<tr><td>${esc(m.length>1?m[0]:x)}</td><td class="num"><b>${esc(m.length>1?m.slice(1).join(":"):"")}</b></td></tr>`}).join("")}</tbody></table></div>
    <div><h3 style="margin-bottom:3mm">Terms & conditions</h3><ol class="terms">${lines(trip.terms).map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>
    <div class="sign"><div class="contact" style="grid-template-columns:1fr"><div><span>Office</span>${esc(profile.address)}</div>${profile.gst?`<div><span>GSTIN</span>${esc(profile.gst)}</div>`:""}</div>
-   <div class="line">For <b>${esc(profile.company)}</b><br>${esc(profile.signName)}${agentCode?`<br><span style="color:#777;font-size:8pt">MK Agent ID ${esc(agentCode)}</span>`:""}</div></div>
+   <div class="line">For <b>${esc(profile.company)}</b><br>${esc(profile.signName)}</div></div>
    </div>${foot(pg,total)}</section>`]);
   document.getElementById("sheets").innerHTML=out.map(([l,h],i)=>`<div class="pagelabel">Page ${i+1} · ${esc(l)}</div>${h}`).join("");
 }
