@@ -11,6 +11,6 @@ A free tool by MK Solutions for travel agents. An agent registers, sets up their
 
 ## Database setup notes
 
-- In Supabase, go to Authentication, then URL Configuration, and set the Site URL to the address where the tool is hosted. The confirmation and password reset emails link there.
+- The live address is https://mkitinerarymaker.vercel.app/ (set as `SITE` in `build.sh`). Confirmation and password reset emails link there. In Supabase, go to Authentication, then URL Configuration, set the Site URL to this address and add it under Redirect URLs.
 - The free Supabase email service sends only a few emails per hour. Connect your own SMTP before many agents sign up.
 - The key in `build.sh` is the publishable (browser) key. Row-level security makes sure each agent can only see their own profile and trips.

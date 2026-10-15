@@ -276,7 +276,8 @@ ol.terms{margin:0;padding-left:5mm;font-size:9pt;display:flex;flex-direction:col
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* MK Solutions setup: paste your Supabase project URL and anon key here. Left empty, the tool runs in preview mode with accounts kept in this browser only. */
-const MK_CONFIG={supabaseUrl:"https://fcpryoeliiggsyzojvjl.supabase.co",supabaseAnonKey:"sb_publishable_yQtUAa9geBGMZpRm_Z3wbw_KnfALbyV"};
+const MK_CONFIG={supabaseUrl:"https://fcpryoeliiggsyzojvjl.supabase.co",supabaseAnonKey:"sb_publishable_yQtUAa9geBGMZpRm_Z3wbw_KnfALbyV",siteUrl:"https://mkitinerarymaker.vercel.app/"};
+const SITE_URL=MK_CONFIG.siteUrl||location.href.split("#")[0];
 (function(){
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
@@ -337,9 +338,9 @@ const sb=(MK_CONFIG.supabaseUrl&&MK_CONFIG.supabaseAnonKey&&window.supabase)?win
 const ck=r=>{if(r.error)throw r.error;return r.data};
 const cloudStore={
   async current(){return ck(await sb.auth.getSession()).session?.user||null},
-  async register(f){const d=ck(await sb.auth.signUp({email:f.email,password:f.password,options:{data:{name:f.name,company:f.company,phone:f.phone},emailRedirectTo:location.href.split("#")[0]}}));return d.session?d.user:null},
+  async register(f){const d=ck(await sb.auth.signUp({email:f.email,password:f.password,options:{data:{name:f.name,company:f.company,phone:f.phone},emailRedirectTo:SITE_URL}}));return d.session?d.user:null},
   async login(email,password){return ck(await sb.auth.signInWithPassword({email,password})).user},
-  async reset(email){ck(await sb.auth.resetPasswordForEmail(email,{redirectTo:location.href.split("#")[0]}))},
+  async reset(email){ck(await sb.auth.resetPasswordForEmail(email,{redirectTo:SITE_URL}))},
   async newPassword(pw){ck(await sb.auth.updateUser({password:pw}))},
   async logout(){await sb.auth.signOut()},
   async agent(){return ck(await sb.from("agents").select("*").eq("id",user.id).single())},
