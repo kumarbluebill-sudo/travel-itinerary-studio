@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>MK Itinerary Maker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=DM+Serif+Display&family=Karla:wght@400;600;700&family=Syne:wght@600;700;800&family=Manrope:wght@400;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Work+Sans:wght@400;600&display=swap">
+<style>
+/* Layout: two-pane workbench. Left = form editor in tabs, right = live A4 sheets. Stacks on phones. */
+:root{
+  --bg:#eef1f3; --panel:#ffffff; --fg:#1d2a33; --muted:#5f6f7a; --line:#d6dde2;
+  --accent:#0f6b6f; --accent-fg:#ffffff; --field:#f7f9fa; --warn:#9a5b00;
+  --ui:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12181c; --panel:#1a2227; --fg:#e4eaee; --muted:#93a3ad; --line:#2c3840;
+  --accent:#4fb3b5; --accent-fg:#0c1417; --field:#141b1f; --warn:#e0a548; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12181c; --panel:#1a2227; --fg:#e4eaee; --muted:#93a3ad; --line:#2c3840;
+  --accent:#4fb3b5; --accent-fg:#0c1417; --field:#141b1f; --warn:#e0a548; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:14px}
+.app{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:0;min-height:100vh}
+.topbar{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;
+  padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.brand{font-weight:700;font-size:16px;letter-spacing:.01em}
+.brand small{font-weight:600;color:var(--muted);font-size:12px;margin-left:6px}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+button,.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--field);color:var(--fg);padding:8px 12px;border-radius:8px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+button.ghost{background:transparent}
+button.danger{color:#b3261e}
+.editor{background:var(--panel);border-right:1px solid var(--line);padding-block:0 40px;min-width:0}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;padding:12px max(16px,env(safe-area-inset-left,0px)) 0;border-bottom:1px solid var(--line)}
+.tab{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 10px;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.pane{padding:16px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.hint{color:var(--muted);font-size:12.5px;line-height:1.5;margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--muted);min-width:0}
+input,textarea,select{font:inherit;font-weight:400;color:var(--fg);background:var(--field);border:1px solid var(--line);border-radius:7px;padding:8px 9px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:70px;line-height:1.45}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.cardhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cardhead b{font-size:13px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--fg)}
+.chk input{width:auto}
+.imgrow{display:flex;gap:10px;align-items:center}
+.thumb{width:64px;height:44px;border-radius:6px;object-fit:cover;background:var(--field);border:1px solid var(--line);flex:none}
+.sec-title{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:6px 0 -4px}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.themeopt{text-align:left;display:flex;flex-direction:column;gap:6px;padding:10px}
+.themeopt[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.swatch{display:flex;gap:4px}.swatch i{width:18px;height:18px;border-radius:50%;display:block;border:1px solid rgba(0,0,0,.1)}
+.pricetbl{display:grid;grid-template-columns:minmax(0,1fr) 54px 90px 28px;gap:6px;align-items:center}
+.pricetbl .h{font-size:11px;color:var(--muted);font-weight:700}
+.x{padding:4px 0;width:28px;text-align:center}
+.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:8px;font-weight:600;z-index:20}
+pre.code{background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;overflow-x:auto;white-space:pre}
+.triplist{display:flex;flex-direction:column;gap:6px}
+.tripitem{display:flex;justify-content:space-between;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.tripitem span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.viewer{padding-block:24px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0;overflow-x:auto}
+.sheets{display:flex;flex-direction:column;align-items:center;gap:24px;width:max-content;margin:0 auto}
+.pagelabel{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;align-self:flex-start;margin-bottom:-16px}
+.auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);background:var(--bg)}
+.hero{position:relative;color:#fff;overflow:hidden;background:#0f2a4a;display:flex}
+.hero>svg.scene{position:absolute;inset:0;width:100%;height:100%}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,20,36,.15) 0%,rgba(8,20,36,.55) 45%,rgba(8,20,36,.88) 100%)}
+.hero-in{position:relative;z-index:1;display:flex;flex-direction:column;gap:22px;justify-content:flex-end;width:100%;max-width:720px;
+  padding-block:48px 40px;padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:28px}
+.mk{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.02em;margin-bottom:auto}
+.mk i{width:36px;height:36px;border-radius:9px;background:#fff;color:#0f2a4a;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:14px}
+.hero h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:clamp(30px,4.2vw,50px);line-height:1.08;margin:0;text-wrap:balance;max-width:16ch}
+.hero .sub{font-size:16px;line-height:1.55;margin:0;max-width:54ch;color:rgba(255,255,255,.88)}
+.feat{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:12px 22px}
+.feat li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4;color:rgba(255,255,255,.92)}
+.feat li b{display:block;color:#fff;font-size:14px}
+.feat svg{flex:none;width:30px;height:30px;padding:6px;border-radius:8px;background:rgba(255,255,255,.14);stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.dest{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.dest figure{margin:0;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18)}
+.dest svg{display:block;width:100%;height:auto;aspect-ratio:4/3}
+.dest figcaption{font-size:12px;padding:7px 10px;color:rgba(255,255,255,.9)}
+.authside{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding-block:40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.free{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+@media (max-width:900px){.auth{grid-template-columns:minmax(0,1fr)}.hero-in{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px}.mk{margin-bottom:60px}}
+@media (max-width:520px){.feat{grid-template-columns:1fr}.dest figcaption{font-size:11px;padding:6px}}
+.authbox{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px 24px;display:flex;flex-direction:column;gap:14px}
+.authbox h1{font-size:22px;margin:0;line-height:1.2}
+.authbox .by{color:var(--muted);font-size:13px;margin:-8px 0 4px}
+.authtabs{display:flex;gap:4px;background:var(--field);border:1px solid var(--line);border-radius:9px;padding:3px}
+.authtabs button{flex:1;border:0;background:transparent;color:var(--muted)}
+.authtabs button[aria-selected="true"]{background:var(--panel);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.authbox form{display:flex;flex-direction:column;gap:12px}
+.msg{font-size:13px;line-height:1.45;margin:0}
+.msg.err{color:#c0392b}.msg.ok{color:var(--accent)}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font-weight:600;align-self:flex-start}
+.demo{font-size:12px;color:var(--warn);margin:0}
+.who{display:flex;flex-direction:column;font-size:12px;line-height:1.3;text-align:right;color:var(--muted)}
+.who b{color:var(--fg)}
+.idcard{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);background:var(--field);border-radius:10px;padding:12px 14px}
+.idcard b{font-size:18px;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+@media (max-width:860px){.app{grid-template-columns:minmax(0,1fr)}.editor{border-right:0;border-bottom:1px solid var(--line)}}
+
+/* ============ ITINERARY SHEETS (always paper, colors per theme) ============ */
+.sheet{width:210mm;min-height:297mm;background:var(--paper);color:var(--ink);font-family:var(--fb);font-size:10.5pt;line-height:1.5;
+  position:relative;box-shadow:0 2px 18px rgba(0,0,0,.18);overflow:hidden;display:flex;flex-direction:column;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.t-classic{--p:#10294a;--a:#2b6cb0;--ink:#1c2633;--paper:#ffffff;--soft:#edf2f8;--fd:"Source Serif 4",Georgia,serif;--fb:"IBM Plex Sans",Arial,sans-serif;--hw:600}
+.t-tropical{--p:#0d5560;--a:#1b8a8f;--ink:#17302f;--paper:#ffffff;--soft:#e6f2f2;--fd:"Fraunces",Georgia,serif;--fb:"Work Sans",Arial,sans-serif;--hw:600}
+.t-modern{--p:#1b2430;--a:#c8372d;--ink:#1a1d21;--paper:#ffffff;--soft:#f0f2f4;--fd:"Syne",Arial,sans-serif;--fb:"Manrope",Arial,sans-serif;--hw:700}
+.t-heritage{--p:#154734;--a:#3f7d62;--ink:#1d2a24;--paper:#ffffff;--soft:#eaf2ee;--fd:"DM Serif Display",Georgia,serif;--fb:"Karla",Arial,sans-serif;--hw:400}
+.t-charcoal{--p:#2a2f36;--a:#5d6b7a;--ink:#22262b;--paper:#ffffff;--soft:#f0f1f3;--fd:"Manrope",Arial,sans-serif;--fb:"Manrope",Arial,sans-serif;--hw:700}
+.t-charcoal h1,.t-charcoal h2{letter-spacing:-.01em}
+.sheet h1,.sheet h2,.sheet h3{font-family:var(--fd);font-weight:var(--hw);color:var(--p);margin:0;line-height:1.1;text-wrap:balance}
+.sheet h2{font-size:24pt}
+.sheet h3{font-size:14pt}
+.sheet:not(.cover)::before{content:"";display:block;height:3mm;background:var(--p);flex:none}
+.s-in{padding:13mm 16mm 12mm;flex:1;display:flex;flex-direction:column;gap:7mm}
+.s-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10mm;border-bottom:1.5px solid var(--a);padding-bottom:4mm}
+.eyebrow{font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:var(--a);font-weight:700}
+.s-foot{display:flex;justify-content:space-between;gap:6mm;font-size:8pt;color:#6b6b6b;border-top:1px solid var(--soft);padding:4mm 16mm 6mm;margin-top:auto}
+.logo{max-height:16mm;max-width:45mm;object-fit:contain}
+.logobadge{width:14mm;height:14mm;border-radius:50%;background:var(--p);color:#fff;display:grid;place-items:center;font-family:var(--fd);font-size:15pt}
+.ph{background:linear-gradient(135deg,var(--p),var(--a));display:grid;place-items:center;color:rgba(255,255,255,.85);font-family:var(--fd);font-size:13pt;text-align:center;padding:6mm}
+.ph small{display:block;font-family:var(--fb);font-size:7pt;letter-spacing:.15em;text-transform:uppercase;opacity:.8;margin-top:2mm}
+img.cov,.ph.cov{width:100%;height:100%;object-fit:cover}
+
+/* cover: overlay layout */
+.cover{padding:0}
+.cv-photo{position:relative;height:178mm}
+.cv-photo>img,.cv-photo>.ph{position:absolute;inset:0;width:100%;height:100%}
+.cv-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.55))}
+.cv-brand{position:absolute;top:12mm;left:14mm;right:14mm;display:flex;justify-content:space-between;align-items:center}
+.cv-brand .logo{background:rgba(255,255,255,.92);padding:2.5mm 4mm;border-radius:2mm}
+.cv-title{position:absolute;left:14mm;right:14mm;bottom:12mm;color:#fff}
+.cv-title .eyebrow{color:#fff;opacity:.9}
+.cv-title h1{color:#fff;font-size:38pt;margin-top:2mm}
+.cv-title p{margin:2mm 0 0;font-size:12pt;opacity:.95}
+.cv-body{padding:12mm 14mm;display:flex;flex-direction:column;gap:8mm;flex:1}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--soft)}
+.facts div{padding:4mm;border-right:1px solid var(--soft)}
+.facts div:last-child{border-right:0}
+.facts b{display:block;font-family:var(--fd);font-size:14pt;color:var(--p);font-weight:var(--hw)}
+.facts span{font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;color:#777}
+.prepared{display:flex;justify-content:space-between;gap:8mm;margin-top:auto;font-size:9.5pt}
+.prepared b{color:var(--p)}
+/* cover: split layout (modern, heritage) */
+.cover.split{flex-direction:row}
+.split .cv-side{width:84mm;background:var(--p);color:#fff;padding:14mm 10mm;display:flex;flex-direction:column;gap:8mm}
+.split .cv-side h1{color:#fff;font-size:24pt;overflow-wrap:break-word;hyphens:auto}
+.split.t-heritage .cv-side h1{font-size:28pt}
+.split .cv-side .eyebrow{color:rgba(255,255,255,.7)}
+.split .cv-main{flex:1;display:flex;flex-direction:column}
+.split .cv-main .pic{flex:1;position:relative;min-height:150mm}
+.split .cv-main .pic>*{position:absolute;inset:0;width:100%;height:100%}
+.split .vfacts{display:flex;flex-direction:column;gap:4mm;font-size:9.5pt}
+.split .vfacts span{display:block;font-size:7pt;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+.split .vfacts b{font-size:12pt}
+.split .cv-logo{background:#fff;border-radius:2mm;padding:3mm;align-self:flex-start}
+.split .cv-foot{padding:8mm 10mm;display:flex;justify-content:space-between;gap:6mm;font-size:9pt}
+
+/* overview */
+.lead{font-size:11.5pt;line-height:1.6;margin:0;max-width:150mm}
+.hl{display:grid;grid-template-columns:1fr 1fr;gap:3mm 8mm;margin:0;padding:0;list-style:none}
+.hl li{padding-left:6mm;position:relative}
+.hl li:before{content:"";position:absolute;left:0;top:2.2mm;width:2.4mm;height:2.4mm;background:var(--a);transform:rotate(45deg)}
+table.t{width:100%;border-collapse:collapse;font-size:9.5pt}
+table.t th{background:var(--p);color:#fff;text-align:left;padding:2.5mm 3mm;font-weight:600;font-size:8.5pt;letter-spacing:.04em}
+table.t td{padding:2.5mm 3mm;border-bottom:1px solid var(--soft);vertical-align:top}
+table.t tr:nth-child(even) td{background:color-mix(in srgb,var(--soft) 45%,transparent)}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.route{display:flex;flex-wrap:wrap;align-items:center;gap:2mm 3mm;font-family:var(--fd);font-size:13pt;color:var(--p)}
+.route i{font-style:normal;color:var(--a)}
+
+/* days */
+.day{display:grid;grid-template-columns:62mm 1fr;gap:6mm;break-inside:avoid;padding-bottom:6mm;border-bottom:1px dashed color-mix(in srgb,var(--a) 50%,transparent)}
+.day:last-child{border-bottom:0}
+.day .dimg{width:62mm;height:46mm;object-fit:cover;border-radius:1.5mm;display:block}
+.day .ph{width:62mm;height:46mm;border-radius:1.5mm}
+.dno{font-size:8pt;letter-spacing:.16em;text-transform:uppercase;color:var(--a);font-weight:700}
+.day h3{margin:1mm 0 2mm}
+.day p{margin:0 0 2.5mm;white-space:pre-line}
+.dmeta{display:flex;flex-wrap:wrap;gap:2mm 5mm;font-size:8.5pt;color:#555}
+.dmeta b{color:var(--p)}
+.pill{display:inline-block;padding:.6mm 2.4mm;border-radius:10mm;background:var(--soft);color:var(--p);font-weight:700;font-size:7.5pt;margin-right:1mm}
+
+/* quote */
+.qtotal{display:flex;justify-content:flex-end}
+.qbox{min-width:80mm;border:1.5px solid var(--p)}
+.qbox div{display:flex;justify-content:space-between;gap:8mm;padding:2mm 4mm;font-variant-numeric:tabular-nums}
+.qbox .grand{background:var(--p);color:#fff;font-weight:700;font-size:12pt}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:8mm}
+ul.ck{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:1.6mm;font-size:9.5pt}
+ul.ck li{padding-left:6mm;position:relative}
+ul.ck.in li:before{content:"✓";position:absolute;left:0;color:#1d7a46;font-weight:700}
+ul.ck.ex li:before{content:"✕";position:absolute;left:0;color:#b3261e;font-weight:700}
+.note{background:var(--soft);padding:4mm 5mm;font-size:9pt;border-left:3px solid var(--a);white-space:pre-line}
+ol.terms{margin:0;padding-left:5mm;font-size:9pt;display:flex;flex-direction:column;gap:1.5mm}
+.sign{display:flex;justify-content:space-between;align-items:flex-end;gap:10mm;margin-top:auto;padding-top:6mm}
+.sign .line{border-top:1px solid #999;padding-top:2mm;min-width:60mm;font-size:9pt}
+.contact{display:grid;grid-template-columns:1fr 1fr;gap:2mm 8mm;font-size:9.5pt}
+.contact span{color:#777;font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;display:block}
+
+@media print{
+  @page{size:A4;margin:0}
+  html,body{background:#fff!important}
+  :root{padding:0!important}
+  .topbar,.editor,.pagelabel,.toast,.auth{display:none!important}
+  .app{display:block}
+  .viewer{padding:0!important;overflow:visible}
+  .sheets{gap:0;width:auto}
+  .sheet{box-shadow:none;min-height:296mm;break-after:page;page-break-after:always;overflow:visible}
+  .sheet:last-child{break-after:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="auth" id="auth" hidden>
+  <section class="hero" aria-label="About MK Itinerary Maker">
+    <svg class="scene" id="heroScene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+    <div class="hero-in">
+      <div class="mk"><i>MK</i>MK Solutions</div>
+      <h1>Beautiful travel itineraries in minutes</h1>
+      <p class="sub">A free tool for travel agents. Add your logo and details once, enter the trip, and send your guest a polished 6-page itinerary with photos, quotation and policies.</p>
+      <ul class="feat">
+        <li><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h6M7 13h10M7 17h4"/></svg><span><b>Your brand on every page</b>Logo, company details and MK Agent ID</span></li>
+        <li><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg><span><b>Day-wise plan with photos</b>Meals, hotel stay and dates for each day</span></li>
+        <li><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span><b>Quotation built in</b>GST, discount and per person cost worked out</span></li>
+        <li><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg><span><b>Policies ready</b>Inclusions, exclusions, cancellation and terms</span></li>
+        <li><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18M3 12h18"/></svg><span><b>5 professional themes</b>Navy, teal, charcoal, bold and emerald</span></li>
+        <li><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span><b>A4 PDF in one click</b>Ready to send on WhatsApp or email</span></li>
+        <li><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg><span><b>Saved to your account</b>Reuse any trip for your next guest</span></li>
+        <li><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg><span><b>Phone and laptop</b>Log in from anywhere, your data follows you</span></li>
+      </ul>
+      <div class="dest">
+        <figure><svg id="sc1" viewBox="0 0 400 300" aria-hidden="true"></svg><figcaption>Kerala backwaters</figcaption></figure>
+        <figure><svg id="sc2" viewBox="0 0 400 300" aria-hidden="true"></svg><figcaption>Hill station escapes</figcaption></figure>
+        <figure><svg id="sc3" viewBox="0 0 400 300" aria-hidden="true"></svg><figcaption>Island beaches</figcaption></figure>
+      </div>
+    </div>
+  </section>
+  <div class="authside"><span class="free">100% free for travel agents</span><div class="authbox" id="authbox"></div></div>
+</div>
+<div class="app" id="app" hidden>
+  <header class="topbar">
+    <div class="brand">MK Itinerary Maker <small>Free tool by MK Solutions</small></div>
+    <div class="actions">
+      <div class="who" id="who"></div>
+      <button id="btnNew" type="button" class="ghost">New trip</button>
+      <button id="btnSave" type="button">Save trip</button>
+      <button id="btnPdf" type="button" class="primary">Download PDF</button>
+      <button id="btnOut" type="button" class="ghost">Log out</button>
+    </div>
+  </header>
+
+  <aside class="editor">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div id="pane"></div>
+  </aside>
+
+  <main class="viewer"><div class="sheets" id="sheets"></div></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+/* MK Solutions setup: paste your Supabase project URL and anon key here. Left empty, the tool runs in preview mode with accounts kept in this browser only. */
+const MK_CONFIG={supabaseUrl:"https://fcpryoeliiggsyzojvjl.supabase.co",supabaseAnonKey:"sb_publishable_yQtUAa9geBGMZpRm_Z3wbw_KnfALbyV"};
+(function(){
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const lines=s=>String(s||"").split("\n").map(x=>x.trim()).filter(Boolean);
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+const THEMES=[
+  {id:"classic",name:"Corporate Navy",c:["#10294a","#2b6cb0","#edf2f8"],cover:"overlay"},
+  {id:"tropical",name:"Ocean Teal",c:["#0d5560","#1b8a8f","#e6f2f2"],cover:"overlay"},
+  {id:"charcoal",name:"Charcoal Minimal",c:["#2a2f36","#5d6b7a","#f0f1f3"],cover:"overlay"},
+  {id:"modern",name:"Modern Bold",c:["#1b2430","#c8372d","#f0f2f4"],cover:"split"},
+  {id:"heritage",name:"Emerald Executive",c:["#154734","#3f7d62","#eaf2ee"],cover:"split"}];
+
+const DEFAULT_PROFILE={
+  company:"Your Travel Company (example)",tagline:"Holidays crafted with care",logo:"",
+  phone:"+91 98765 43210",email:"hello@yourtravel.in",website:"www.yourtravel.in",
+  address:"12, Anna Salai, Chennai 600002",gst:"33ABCDE1234F1Z5",
+  bank:"Bank: HDFC Bank\nA/c Name: Your Travel Company\nA/c No: 50200012345678\nIFSC: HDFC0001234\nUPI: yourtravel@hdfcbank",
+  signName:"Travel Consultant",license:"",currency:"₹",theme:"classic",gstPct:5,
+  inclusions:"Accommodation in the hotels mentioned or similar\nDaily breakfast at the hotel\nAll transfers and sightseeing by private AC vehicle\nDriver allowance, toll, parking and fuel\nWelcome drink on arrival\nAll applicable hotel taxes",
+  exclusions:"Air or train tickets unless mentioned\nEntry tickets to monuments, parks and boat rides\nLunch and dinner unless mentioned\nPersonal expenses like laundry, tips, phone calls\nAnything not listed under inclusions",
+  cancellation:"30 days or more before travel: 10% of the package cost\n15 to 29 days before travel: 25% of the package cost\n7 to 14 days before travel: 50% of the package cost\nLess than 7 days or no show: 100% of the package cost",
+  terms:"Hotel check-in is 2 PM and check-out is 11 AM.\nRates are subject to availability at the time of confirmation.\nA valid photo ID is required for all guests at check-in.\nItinerary may change due to weather, road or local conditions.\nAC in vehicles will be switched off on hill roads.\nGST as applicable will be charged extra.",
+  payment:"30% advance to confirm the booking\nBalance 70% payable 15 days before travel"};
+
+function sampleTrip(p){return{
+  id:uid(),title:"Kerala Backwaters & Hills",destination:"Kerala",client:"Mr. Arun & Family",
+  start:new Date(Date.now()+30*864e5).toISOString().slice(0,10),adults:2,children:1,cover:"",
+  route:"Cochin, Munnar, Thekkady, Alleppey, Cochin",
+  overview:"A relaxed six-day journey through Kerala's tea hills, spice forests and quiet backwaters. You will stay in hand-picked hotels, travel in a private car with an experienced driver, and end with a night on a traditional houseboat.",
+  highlights:"Tea gardens and Eravikulam National Park\nPeriyar boat ride and spice plantation walk\nOvernight private houseboat at Alleppey\nKathakali and Kalaripayattu shows\nFort Kochi walk and Chinese fishing nets\nPrivate AC car for the whole trip",
+  hotels:[{city:"Munnar",name:"Tea Valley Resort",nights:2,room:"Deluxe Room",meal:"Breakfast"},
+    {city:"Thekkady",name:"Spice Grove Hotel",nights:1,room:"Premium Room",meal:"Breakfast"},
+    {city:"Alleppey",name:"Private Houseboat",nights:1,room:"1 Bedroom AC",meal:"All meals"},
+    {city:"Cochin",name:"Harbour View Inn",nights:1,room:"Superior Room",meal:"Breakfast"}],
+  days:[
+   {title:"Arrive Cochin, drive to Munnar",desc:"Our driver meets you at Cochin airport. Drive up to Munnar (about 4 hours), stopping at Cheeyappara and Valara waterfalls. Check in and relax for the evening.",img:"",b:false,l:false,d:false,stay:"Munnar"},
+   {title:"Munnar sightseeing",desc:"Visit Eravikulam National Park to see the Nilgiri Tahr, the Tea Museum, Mattupetty Dam and Echo Point. Evening free for shopping in Munnar town.",img:"",b:true,l:false,d:false,stay:"Munnar"},
+   {title:"Munnar to Thekkady",desc:"Drive to Thekkady through cardamom estates. Afternoon spice plantation walk, then a Kathakali or Kalaripayattu show in the evening.",img:"",b:true,l:false,d:false,stay:"Thekkady"},
+   {title:"Thekkady to Alleppey houseboat",desc:"Morning boat ride on Periyar Lake. Drive to Alleppey and board your private houseboat at noon. Cruise the backwaters with lunch, evening tea and dinner on board.",img:"",b:true,l:true,d:true,stay:"Houseboat"},
+   {title:"Alleppey to Cochin",desc:"Disembark after breakfast and drive to Cochin. Afternoon Fort Kochi walk: Chinese fishing nets, St. Francis Church, Jew Town and Mattancherry Palace.",img:"",b:true,l:false,d:false,stay:"Cochin"},
+   {title:"Departure",desc:"After breakfast, check out and transfer to Cochin airport with sweet memories of God's Own Country.",img:"",b:true,l:false,d:false,stay:""}],
+  price:{items:[{label:"Package cost per adult (twin sharing)",qty:2,rate:18500},{label:"Child with extra bed (below 12 yrs)",qty:1,rate:9500}],discount:2000,gstPct:p.gstPct},
+  validity:"Quote valid for 7 days",payment:p.payment,inclusions:p.inclusions,exclusions:p.exclusions,
+  cancellation:p.cancellation,terms:p.terms,theme:p.theme,note:"Hotels are subject to availability. Similar category hotels will be provided if the above are not available."};}
+
+function blankTrip(p){const t=sampleTrip(p);Object.assign(t,{id:uid(),title:"New Trip",destination:"",client:"",route:"",overview:"",highlights:"",cover:"",
+  hotels:[{city:"",name:"",nights:1,room:"",meal:"Breakfast"}],days:[{title:"Arrival",desc:"",img:"",b:false,l:false,d:false,stay:""}],
+  price:{items:[{label:"Package cost per adult",qty:2,rate:0}],discount:0,gstPct:p.gstPct},note:""});return t;}
+
+function uid(){try{return crypto.randomUUID()}catch(e){return "t"+Date.now()+Math.random().toString(36).slice(2,8)}}
+let profile=clone(DEFAULT_PROFILE),tripsMeta=[],trip=null,user=null,agentCode="";
+let tab=LS.get("nk.tab","trip");if(tab==="embed")tab="trip";
+
+/* ---------- accounts & storage: Supabase when configured, else this browser ---------- */
+const sb=(MK_CONFIG.supabaseUrl&&MK_CONFIG.supabaseAnonKey&&window.supabase)?window.supabase.createClient(MK_CONFIG.supabaseUrl,MK_CONFIG.supabaseAnonKey):null;
+const ck=r=>{if(r.error)throw r.error;return r.data};
+const cloudStore={
+  async current(){return ck(await sb.auth.getSession()).session?.user||null},
+  async register(f){const d=ck(await sb.auth.signUp({email:f.email,password:f.password,options:{data:{name:f.name,company:f.company,phone:f.phone},emailRedirectTo:location.href.split("#")[0]}}));return d.session?d.user:null},
+  async login(email,password){return ck(await sb.auth.signInWithPassword({email,password})).user},
+  async reset(email){ck(await sb.auth.resetPasswordForEmail(email,{redirectTo:location.href.split("#")[0]}))},
+  async newPassword(pw){ck(await sb.auth.updateUser({password:pw}))},
+  async logout(){await sb.auth.signOut()},
+  async agent(){return ck(await sb.from("agents").select("*").eq("id",user.id).single())},
+  async saveProfile(p){ck(await sb.from("agents").update({profile:p,company:p.company,phone:p.phone,updated_at:new Date().toISOString()}).eq("id",user.id))},
+  async listTrips(){return ck(await sb.from("trips").select("id,title,client,updated_at").order("updated_at",{ascending:false}))},
+  async getTrip(id){return ck(await sb.from("trips").select("data").eq("id",id).single()).data},
+  async saveTrip(t){ck(await sb.from("trips").upsert({id:t.id,agent_id:user.id,title:t.title,client:t.client,data:t,updated_at:new Date().toISOString()}))},
+  async deleteTrip(id){ck(await sb.from("trips").delete().eq("id",id))}};
+async function hash(s){try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}catch(e){return s}}
+const localStore={
+  async current(){const e=LS.get("nk.session","");const u=LS.get("nk.users",{})[e];return u?{id:e,email:e}:null},
+  async register(f){const us=LS.get("nk.users",{});const e=f.email.toLowerCase();if(us[e])throw new Error("An account with this email already exists. Please log in.");
+    us[e]={name:f.name,company:f.company,phone:f.phone,email:e,pw:await hash(f.password),agent_code:"MK"+(1000+Object.keys(us).length+1),profile:{}};
+    if(!LS.set("nk.users",us))throw new Error("This browser blocked storage, so the account could not be created.");LS.set("nk.session",e);return {id:e,email:e}},
+  async login(email,pw){const e=email.toLowerCase();const u=LS.get("nk.users",{})[e];if(!u||u.pw!==await hash(pw))throw new Error("Email or password is wrong.");LS.set("nk.session",e);return {id:e,email:e}},
+  async reset(){throw new Error("Password reset works once the tool is connected to the MK Solutions database.")},
+  async newPassword(){},
+  async logout(){LS.set("nk.session","")},
+  async agent(){return LS.get("nk.users",{})[user.id]},
+  async saveProfile(p){const us=LS.get("nk.users",{});us[user.id].profile=p;us[user.id].company=p.company;if(!LS.set("nk.users",us))throw new Error("browser storage is full")},
+  async listTrips(){return LS.get("nk.trips."+user.id,[]).map(t=>({id:t.id,title:t.title,client:t.client,updated_at:t.updated_at}))},
+  async getTrip(id){return clone(LS.get("nk.trips."+user.id,[]).find(t=>t.id===id))},
+  async saveTrip(t){const a=LS.get("nk.trips."+user.id,[]).filter(x=>x.id!==t.id);a.unshift(Object.assign(clone(t),{updated_at:new Date().toISOString()}));if(!LS.set("nk.trips."+user.id,a))throw new Error("browser storage is full. Remove photos or old trips")},
+  async deleteTrip(id){LS.set("nk.trips."+user.id,LS.get("nk.trips."+user.id,[]).filter(x=>x.id!==id))}};
+const store=sb?cloudStore:localStore;
+
+/* ---------- helpers ---------- */
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2200);}
+function persist(){if(user&&trip)LS.set("nk.current."+user.id,trip);}
+let pst;function saveProfileSoon(){clearTimeout(pst);pst=setTimeout(()=>store.saveProfile(profile).catch(e=>toast("Profile not saved: "+e.message)),1200);}
+function getPath(o,p){return p.split(".").reduce((a,k)=>a==null?a:a[k],o)}
+function setPath(o,p,v){const ks=p.split(".");const last=ks.pop();const t=ks.reduce((a,k)=>a[k],o);t[last]=v;}
+function root(path){return path.startsWith("profile.")?[{profile},path]:[{trip},path]}
+function money(n){const v=Math.round(Number(n)||0);return (profile.currency||"₹")+" "+v.toLocaleString("en-IN");}
+function fmtDate(d,add=0){if(!d)return"";const x=new Date(d+"T00:00:00");x.setDate(x.getDate()+add);return x.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});}
+function nights(){return Math.max(0,trip.days.length-1)}
+function readImage(file,max,cb,png){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height));
+  const c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+  cb(png?c.toDataURL("image/png"):c.toDataURL("image/jpeg",.8));};im.src=r.result;};r.readAsDataURL(file);}
+function totals(){const it=trip.price.items.reduce((a,i)=>a+(+i.qty||0)*(+i.rate||0),0);const disc=+trip.price.discount||0;const sub=Math.max(0,it-disc);
+  const gst=sub*(+trip.price.gstPct||0)/100;const pax=(+trip.adults||0)+(+trip.children||0);return{it,disc,sub,gst,total:sub+gst,pax};}
+
+/* ---------- editor ---------- */
+const TABS=[["profile","My profile"],["trip","Trip"],["days","Day plan"],["price","Quotation"],["policy","Policies"],["theme","Theme"],["saved","Saved"]];
+function F(label,path,opt={}){const v=getPath(path.startsWith("profile.")?{profile}:{trip},path)??"";const id="f_"+path.replace(/\./g,"_");
+  const type=opt.type||"text";
+  const ctrl=type==="area"?`<textarea id="${id}" data-path="${path}" rows="${opt.rows||4}" placeholder="${esc(opt.ph||"")}">${esc(v)}</textarea>`
+   :type==="select"?`<select id="${id}" data-path="${path}">${opt.options.map(o=>`<option ${o==v?"selected":""}>${esc(o)}</option>`).join("")}</select>`
+   :`<input id="${id}" type="${type}" data-path="${path}" value="${esc(v)}" placeholder="${esc(opt.ph||"")}">`;
+  return `<label class="f" for="${id}">${esc(label)}${ctrl}</label>`;}
+function IMG(label,path,id){const v=getPath(path.startsWith("profile.")?{profile}:{trip},path);
+  return `<div class="f"><span class="hint" style="font-weight:600">${esc(label)}</span><div class="imgrow">${v?`<img class="thumb" src="${v}" alt="">`:`<span class="thumb"></span>`}
+  <input id="${id}" type="file" accept="image/*" data-img="${path}">${v?`<button type="button" class="ghost x" data-clear="${path}" aria-label="Remove image">✕</button>`:""}</div></div>`;}
+
+function renderTabs(){document.getElementById("tabs").innerHTML=TABS.map(([k,l])=>`<button type="button" role="tab" class="tab" aria-selected="${k===tab}" data-tab="${k}">${l}</button>`).join("");}
+function renderPane(){const P=document.getElementById("pane");let h="";
+ if(tab==="profile"){h=`<div class="idcard"><div><span class="hint">Your MK Agent ID</span><br><b>${esc(agentCode)}</b></div><span class="hint">${esc(user?.email||"")}</span></div>
+  <p class="hint">Fill this once. Your logo, contact, bank details and default policies are saved to your account and added to every new itinerary.</p>
+  ${IMG("Company logo (PNG with transparent background works best)","profile.logo","img_logo")}
+  ${F("Company name","profile.company")}${F("Tagline","profile.tagline")}
+  <div class="grid2">${F("Phone","profile.phone")}${F("Email","profile.email")}</div>
+  <div class="grid2">${F("Website","profile.website")}${F("GSTIN","profile.gst")}</div>
+  ${F("Office address","profile.address")}
+  <div class="grid2">${F("Signature name","profile.signName")}${F("Licence / registration no.","profile.license",{ph:"Optional"})}</div>
+  <div class="grid2">${F("Currency symbol","profile.currency")}${F("Default GST %","profile.gstPct",{type:"number"})}</div>
+  ${F("Bank / UPI details","profile.bank",{type:"area",rows:5})}
+  <p class="sec-title">Default text for new trips</p>
+  ${F("Inclusions (one per line)","profile.inclusions",{type:"area",rows:5})}
+  ${F("Exclusions (one per line)","profile.exclusions",{type:"area",rows:5})}
+  ${F("Cancellation policy (one per line)","profile.cancellation",{type:"area",rows:4})}
+  ${F("Terms & conditions (one per line)","profile.terms",{type:"area",rows:5})}
+  ${F("Payment terms (one per line)","profile.payment",{type:"area",rows:3})}
+  <button type="button" data-act="applyDefaults">Apply these defaults to the current trip</button>`;}
+ if(tab==="trip"){h=`${F("Trip title","trip.title")}
+  <div class="grid2">${F("Destination","trip.destination")}${F("Guest name","trip.client")}</div>
+  <div class="grid3">${F("Start date","trip.start",{type:"date"})}${F("Adults","trip.adults",{type:"number"})}${F("Children","trip.children",{type:"number"})}</div>
+  ${F("Route (comma separated)","trip.route",{ph:"Cochin, Munnar, Thekkady"})}
+  ${IMG("Cover photo","trip.cover","img_cover")}
+  ${F("Trip overview","trip.overview",{type:"area",rows:4})}
+  ${F("Highlights (one per line)","trip.highlights",{type:"area",rows:5})}
+  <p class="sec-title">Hotels</p>
+  ${trip.hotels.map((x,i)=>`<div class="card"><div class="cardhead"><b>Hotel ${i+1}</b><button type="button" class="ghost x danger" data-act="delHotel" data-i="${i}" aria-label="Remove hotel">✕</button></div>
+   <div class="grid2">${F("City","trip.hotels."+i+".city")}${F("Hotel name","trip.hotels."+i+".name")}</div>
+   <div class="grid3">${F("Nights","trip.hotels."+i+".nights",{type:"number"})}${F("Room type","trip.hotels."+i+".room")}${F("Meal plan","trip.hotels."+i+".meal",{type:"select",options:["Room only","Breakfast","Breakfast & Dinner","All meals"]})}</div></div>`).join("")}
+  <button type="button" data-act="addHotel">+ Add hotel</button>`;}
+ if(tab==="days"){h=`<p class="hint">Each day gets its own block with a photo. Three days fit on one page.</p>`+trip.days.map((d,i)=>`<div class="card">
+   <div class="cardhead"><b>Day ${i+1}${trip.start?" · "+fmtDate(trip.start,i):""}</b><div class="row">
+   <button type="button" class="ghost x" data-act="upDay" data-i="${i}" aria-label="Move up">↑</button>
+   <button type="button" class="ghost x danger" data-act="delDay" data-i="${i}" aria-label="Remove day">✕</button></div></div>
+   ${F("Title","trip.days."+i+".title")}${F("What happens today","trip.days."+i+".desc",{type:"area",rows:4})}
+   ${IMG("Photo","trip.days."+i+".img","img_day"+i)}
+   <div class="row">${["b","l","d"].map(m=>`<label class="chk" for="m_${i}_${m}"><input id="m_${i}_${m}" type="checkbox" data-path="trip.days.${i}.${m}" ${d[m]?"checked":""}>${{b:"Breakfast",l:"Lunch",d:"Dinner"}[m]}</label>`).join("")}</div>
+   ${F("Overnight stay","trip.days."+i+".stay")}</div>`).join("")+`<button type="button" data-act="addDay">+ Add day</button>`;}
+ if(tab==="price"){h=`<div class="pricetbl"><span class="h">Item</span><span class="h">Qty</span><span class="h">Rate</span><span></span>
+  ${trip.price.items.map((x,i)=>`<input id="pi_l${i}" aria-label="Item" data-path="trip.price.items.${i}.label" value="${esc(x.label)}"><input id="pi_q${i}" aria-label="Qty" type="number" data-path="trip.price.items.${i}.qty" value="${esc(x.qty)}"><input id="pi_r${i}" aria-label="Rate" type="number" data-path="trip.price.items.${i}.rate" value="${esc(x.rate)}"><button type="button" class="ghost x danger" data-act="delItem" data-i="${i}" aria-label="Remove item">✕</button>`).join("")}</div>
+  <button type="button" data-act="addItem">+ Add price line</button>
+  <div class="grid2">${F("Discount amount","trip.price.discount",{type:"number"})}${F("GST %","trip.price.gstPct",{type:"number"})}</div>
+  <div class="card" id="sumbox"></div>
+  ${F("Quote validity","trip.validity")}
+  ${F("Payment terms (one per line)","trip.payment",{type:"area",rows:3})}
+  ${F("Important note","trip.note",{type:"area",rows:3})}`;}
+ if(tab==="policy"){h=`<p class="hint">These came from your profile defaults. Changes here apply to this trip only.</p>
+  ${F("Inclusions (one per line)","trip.inclusions",{type:"area",rows:6})}
+  ${F("Exclusions (one per line)","trip.exclusions",{type:"area",rows:6})}
+  ${F("Cancellation policy (one per line)","trip.cancellation",{type:"area",rows:5})}
+  ${F("Terms & conditions (one per line)","trip.terms",{type:"area",rows:6})}`;}
+ if(tab==="theme"){h=`<div class="themes">${THEMES.map(t=>`<button type="button" class="themeopt" aria-pressed="${trip.theme===t.id}" data-theme-pick="${t.id}"><span class="swatch">${t.c.map(c=>`<i style="background:${c}"></i>`).join("")}</span><b>${t.name}</b><span class="hint">${t.cover==="split"?"Side-panel cover":"Full photo cover"}</span></button>`).join("")}</div>
+  <button type="button" data-act="themeDefault">Make this my default theme</button>`;}
+ if(tab==="saved"){h=`<p class="hint">Saved trips stay in your account. Load one to edit it again or reuse it for another guest.</p>
+  <div class="triplist">${tripsMeta.length?tripsMeta.map((t,i)=>`<div class="tripitem"><span><b>${esc(t.title)}</b> · ${esc(t.client||"No guest")}</span><div class="row"><button type="button" data-act="loadTrip" data-i="${i}">Load</button><button type="button" class="ghost" data-act="dupTrip" data-i="${i}">Copy</button><button type="button" class="ghost danger" data-act="delTrip" data-i="${i}">Delete</button></div></div>`).join(""):`<p class="hint">No saved trips yet. Press "Save trip" at the top to keep this one.</p>`}</div>
+  <button type="button" data-act="loadSample">Load the Kerala sample trip</button>`;}
+ P.innerHTML=`<div class="pane">${h}</div>`;updateSum();}
+function updateSum(){const b=document.getElementById("sumbox");if(!b)return;const t=totals();
+  b.innerHTML=`<div class="cardhead"><span>Items</span><b>${money(t.it)}</b></div><div class="cardhead"><span>Discount</span><b>− ${money(t.disc)}</b></div><div class="cardhead"><span>GST ${trip.price.gstPct||0}%</span><b>${money(t.gst)}</b></div><div class="cardhead"><span>Total</span><b>${money(t.total)}</b></div>`;}
+
+/* ---------- itinerary sheets ---------- */
+function photo(src,label,cls){return src?`<img class="${cls||""}" src="${src}" alt="${esc(label)}">`:`<div class="ph ${cls||""}">${esc(label||"Add a photo")}<small>Photo</small></div>`;}
+function logo(){return profile.logo?`<img class="logo" src="${profile.logo}" alt="${esc(profile.company)}">`:`<div class="logobadge">${esc((profile.company||"T").trim().charAt(0))}</div>`;}
+function head(eyebrow,title){return `<div class="s-head"><div><div class="eyebrow">${esc(eyebrow)}</div><h2>${esc(title)}</h2></div>${logo()}</div>`;}
+function foot(n,total){return `<div class="s-foot"><span>${esc(profile.company)} · ${esc(profile.phone)} · ${esc(profile.email)}</span><span>${agentCode?"Agent ID "+esc(agentCode)+" · ":""}${profile.license?"Lic. "+esc(profile.license)+" · ":""}Page ${n} of ${total}</span></div>`;}
+function renderSheets(){
+  const th=THEMES.find(t=>t.id===trip.theme)||THEMES[0];const T=totals();const n=nights();
+  const dayChunks=[];for(let i=0;i<trip.days.length;i+=3)dayChunks.push(trip.days.slice(i,i+3).map((d,k)=>[d,i+k]));
+  const total=2+dayChunks.length+2;let pg=0;const out=[];
+  const dur=`${n}N / ${trip.days.length}D`;const pax=`${trip.adults||0} Adult${trip.adults==1?"":"s"}${+trip.children?` + ${trip.children} Child`:""}`;
+  const dates=trip.start?`${fmtDate(trip.start)} – ${fmtDate(trip.start,n)}`:"Dates to be confirmed";
+  // cover
+  pg++;
+  if(th.cover==="overlay"){out.push(["Cover",`<section class="sheet cover t-${th.id}"><div class="cv-photo">${photo(trip.cover,trip.destination||trip.title)}<div class="cv-shade"></div>
+   <div class="cv-brand">${logo()}<span class="eyebrow" style="color:#fff">${esc(profile.tagline)}</span></div>
+   <div class="cv-title"><div class="eyebrow">Holiday itinerary · ${esc(dur)}</div><h1>${esc(trip.title)}</h1><p>Specially prepared for ${esc(trip.client||"you")}</p></div></div>
+   <div class="cv-body"><div class="facts"><div><b>${esc(dur)}</b><span>Duration</span></div><div><b>${esc(trip.destination||"–")}</b><span>Destination</span></div><div><b>${esc(pax)}</b><span>Travellers</span></div><div><b>${trip.start?esc(fmtDate(trip.start)):"TBC"}</b><span>Start date</span></div></div>
+   ${trip.route?`<div class="route">${lines(trip.route.replace(/,/g,"\n")).map(esc).join(" <i>→</i> ")}</div>`:""}
+   <div class="prepared"><div>Prepared by<br><b>${esc(profile.signName)}</b><br>${esc(profile.company)}</div><div style="text-align:right">${esc(profile.phone)}<br>${esc(profile.email)}<br>${esc(profile.website)}</div></div></div></section>`]);}
+  else{out.push(["Cover",`<section class="sheet cover split t-${th.id}"><div class="cv-side"><div class="cv-logo">${logo()}</div><div><div class="eyebrow">Holiday itinerary</div><h1>${esc(trip.title)}</h1></div>
+   <div class="vfacts"><div><span>Prepared for</span><b>${esc(trip.client||"–")}</b></div><div><span>Duration</span><b>${esc(dur)}</b></div><div><span>Travel dates</span><b>${esc(dates)}</b></div><div><span>Travellers</span><b>${esc(pax)}</b></div></div>
+   <div style="margin-top:auto;font-size:9pt;opacity:.85">${esc(profile.company)}<br>${esc(profile.phone)}<br>${esc(profile.website)}</div></div>
+   <div class="cv-main"><div class="pic">${photo(trip.cover,trip.destination||trip.title)}</div><div class="cv-foot"><span>${trip.route?esc(trip.route.split(",").map(s=>s.trim()).join(" · ")):""}</span><span>${esc(profile.tagline)}</span></div></div></section>`]);}
+  // overview
+  pg++;
+  const hn=trip.hotels.filter(h=>h.city||h.name);
+  out.push(["Trip overview",`<section class="sheet t-${th.id}"><div class="s-in">${head("Your journey at a glance",trip.title)}
+   ${trip.overview?`<p class="lead">${esc(trip.overview)}</p>`:""}
+   ${lines(trip.highlights).length?`<div><h3 style="margin-bottom:3mm">Trip highlights</h3><ul class="hl">${lines(trip.highlights).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
+   ${hn.length?`<div><h3 style="margin-bottom:3mm">Your hotels</h3><table class="t"><thead><tr><th>City</th><th>Hotel</th><th>Room</th><th>Meals</th><th class="num">Nights</th></tr></thead><tbody>${hn.map(h=>`<tr><td>${esc(h.city)}</td><td><b>${esc(h.name)}</b></td><td>${esc(h.room)}</td><td>${esc(h.meal)}</td><td class="num">${esc(h.nights)}</td></tr>`).join("")}</tbody></table></div>`:""}
+   <div><h3 style="margin-bottom:3mm">Day by day summary</h3><table class="t"><thead><tr><th>Day</th><th>Date</th><th>Plan</th><th>Stay</th></tr></thead><tbody>${trip.days.map((d,i)=>`<tr><td>${i+1}</td><td style="white-space:nowrap">${trip.start?esc(fmtDate(trip.start,i)):"–"}</td><td>${esc(d.title)}</td><td>${esc(d.stay||"–")}</td></tr>`).join("")}</tbody></table></div>
+   </div>${foot(pg,total)}</section>`]);
+  // days
+  dayChunks.forEach((ch,ci)=>{pg++;out.push(["Day plan "+(ci+1),`<section class="sheet t-${th.id}"><div class="s-in">${head(ci?"Day-wise plan (continued)":"Day-wise plan","Your itinerary")}
+   ${ch.map(([d,i])=>{const meals=[d.b&&"Breakfast",d.l&&"Lunch",d.d&&"Dinner"].filter(Boolean);return `<article class="day">${photo(d.img,d.title,"dimg")}
+   <div><div class="dno">Day ${i+1}${trip.start?" · "+esc(fmtDate(trip.start,i)):""}</div><h3>${esc(d.title)}</h3><p>${esc(d.desc)}</p>
+   <div class="dmeta"><span><b>Meals:</b> ${meals.length?meals.map(m=>`<span class="pill">${m}</span>`).join(""):"None included"}</span>${d.stay?`<span><b>Overnight:</b> ${esc(d.stay)}</span>`:""}</div></div></article>`}).join("")}
+   </div>${foot(pg,total)}</section>`]);});
+  // quotation + inclusions
+  pg++;
+  out.push(["Quotation",`<section class="sheet t-${th.id}"><div class="s-in">${head("Quotation","Package cost")}
+   <div class="contact"><div><span>Guest</span>${esc(trip.client||"–")}</div><div><span>Travel dates</span>${esc(dates)}</div><div><span>Travellers</span>${esc(pax)}</div><div><span>Validity</span>${esc(trip.validity||"–")}</div></div>
+   <table class="t"><thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th></tr></thead><tbody>
+   ${trip.price.items.map(x=>`<tr><td>${esc(x.label)}</td><td class="num">${esc(x.qty)}</td><td class="num">${money(x.rate)}</td><td class="num">${money((+x.qty||0)*(+x.rate||0))}</td></tr>`).join("")}</tbody></table>
+   <div class="qtotal"><div class="qbox"><div><span>Sub total</span><span>${money(T.it)}</span></div>${T.disc?`<div><span>Discount</span><span>− ${money(T.disc)}</span></div>`:""}<div><span>GST @ ${esc(trip.price.gstPct||0)}%</span><span>${money(T.gst)}</span></div><div class="grand"><span>Total payable</span><span>${money(T.total)}</span></div>${T.pax?`<div><span>Approx. per person</span><span>${money(T.total/T.pax)}</span></div>`:""}</div></div>
+   <div class="cols2"><div><h3 style="margin-bottom:3mm">Inclusions</h3><ul class="ck in">${lines(trip.inclusions).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+   <div><h3 style="margin-bottom:3mm">Exclusions</h3><ul class="ck ex">${lines(trip.exclusions).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div></div>
+   ${trip.note?`<div class="note">${esc(trip.note)}</div>`:""}
+   </div>${foot(pg,total)}</section>`]);
+  // policies
+  pg++;
+  out.push(["Policies & terms",`<section class="sheet t-${th.id}"><div class="s-in">${head("Before you travel","Policies & terms")}
+   <div class="cols2"><div><h3 style="margin-bottom:3mm">Payment terms</h3><ul class="ck in">${lines(trip.payment).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+   <div><h3 style="margin-bottom:3mm">Bank details</h3><div class="note">${esc(profile.bank)}</div></div></div>
+   <div><h3 style="margin-bottom:3mm">Cancellation policy</h3><table class="t"><tbody>${lines(trip.cancellation).map(x=>{const m=x.split(":");return `<tr><td>${esc(m.length>1?m[0]:x)}</td><td class="num"><b>${esc(m.length>1?m.slice(1).join(":"):"")}</b></td></tr>`}).join("")}</tbody></table></div>
+   <div><h3 style="margin-bottom:3mm">Terms & conditions</h3><ol class="terms">${lines(trip.terms).map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>
+   <div class="sign"><div class="contact" style="grid-template-columns:1fr"><div><span>Office</span>${esc(profile.address)}</div>${profile.gst?`<div><span>GSTIN</span>${esc(profile.gst)}</div>`:""}</div>
+   <div class="line">For <b>${esc(profile.company)}</b><br>${esc(profile.signName)}${agentCode?`<br><span style="color:#777;font-size:8pt">MK Agent ID ${esc(agentCode)}</span>`:""}</div></div>
+   </div>${foot(pg,total)}</section>`]);
+  document.getElementById("sheets").innerHTML=out.map(([l,h],i)=>`<div class="pagelabel">Page ${i+1} · ${esc(l)}</div>${h}`).join("");
+}
+
+/* ---------- events ---------- */
+let rt;function refresh(){clearTimeout(rt);rt=setTimeout(()=>{renderSheets();updateSum();persist();},120);}
+document.addEventListener("input",e=>{const p=e.target.dataset.path;if(!p)return;let v=e.target.type==="checkbox"?e.target.checked:e.target.value;
+  if(e.target.type==="number")v=v===""?"":Number(v);setPath(p.startsWith("profile.")?{profile}:{trip},p,v);if(p.startsWith("profile."))saveProfileSoon();refresh();});
+document.addEventListener("change",e=>{const p=e.target.dataset.img;if(!p||!e.target.files[0])return;const isLogo=p==="profile.logo";
+  readImage(e.target.files[0],isLogo?500:1200,url=>{setPath(p.startsWith("profile.")?{profile}:{trip},p,url);if(isLogo)saveProfileSoon();renderPane();refresh();},isLogo);});
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.i;
+  if(b.dataset.tab){tab=b.dataset.tab;LS.set("nk.tab",tab);renderTabs();renderPane();return;}
+  if(b.dataset.clear){setPath(b.dataset.clear.startsWith("profile.")?{profile}:{trip},b.dataset.clear,"");if(b.dataset.clear.startsWith("profile."))saveProfileSoon();renderPane();refresh();return;}
+  if(b.dataset.themePick){trip.theme=b.dataset.themePick;renderPane();refresh();return;}
+  const a=b.dataset.act;if(!a)return;
+  const acts={
+   addHotel:()=>trip.hotels.push({city:"",name:"",nights:1,room:"",meal:"Breakfast"}),delHotel:()=>trip.hotels.splice(i,1),
+   addDay:()=>trip.days.push({title:"",desc:"",img:"",b:true,l:false,d:false,stay:""}),delDay:()=>trip.days.length>1&&trip.days.splice(i,1),
+   upDay:()=>{if(i>0){const d=trip.days.splice(i,1)[0];trip.days.splice(i-1,0,d);}},
+   addItem:()=>trip.price.items.push({label:"",qty:1,rate:0}),delItem:()=>trip.price.items.splice(i,1),
+   applyDefaults:()=>{["inclusions","exclusions","cancellation","terms","payment"].forEach(k=>trip[k]=profile[k]);trip.price.gstPct=profile.gstPct;toast("Defaults applied to this trip");},
+   themeDefault:()=>{profile.theme=trip.theme;saveProfileSoon();toast("Default theme saved");},
+   loadTrip:()=>{busy(async()=>{trip=await store.getTrip(tripsMeta[i].id);toast("Trip loaded");});return "stop";},
+   dupTrip:()=>{busy(async()=>{trip=await store.getTrip(tripsMeta[i].id);trip.id=uid();trip.title+=" (copy)";trip.client="";toast("Copy created. Save it when ready.");});return "stop";},
+   delTrip:()=>{if(b.dataset.confirm){busy(async()=>{await store.deleteTrip(tripsMeta[i].id);tripsMeta=await store.listTrips();toast("Trip deleted");});}else{b.dataset.confirm=1;b.textContent="Tap again to delete";}return "stop";},
+   loadSample:()=>{trip=sampleTrip(profile);toast("Sample trip loaded");}};
+  if(acts[a]&&acts[a]()==="stop")return;renderPane();refresh();});
+document.getElementById("btnNew").onclick=()=>{trip=blankTrip(profile);tab="trip";renderTabs();renderPane();refresh();toast("New trip started with your defaults");};
+function busy(fn){fn().then(()=>{renderPane();refresh();}).catch(e=>toast("Something went wrong: "+e.message));}
+document.getElementById("btnSave").onclick=()=>busy(async()=>{await store.saveTrip(trip);tripsMeta=await store.listTrips();toast("Trip saved to your account");});
+document.getElementById("btnOut").onclick=async()=>{await store.logout();user=null;showAuth("login");};
+document.getElementById("btnPdf").onclick=()=>{const before=Date.now();window.print();if(Date.now()-before<50)toast("If no print window opened, open this tool from your website to save the PDF.");};
+
+/* ---------- illustrated travel scenes for the login page ---------- */
+function palm(x,y,k){const t=`M${x} ${y} q${8*k} ${-38*k} ${-2*k} ${-78*k}`;const tx=x-2*k,ty=y-78*k;
+  const fr=[[-46,6],[-38,26],[44,4],[40,26],[-8,-30],[18,-26]].map(([dx,dy])=>`<path d="M${tx} ${ty} q${dx*.5*k} ${(dy-22)*k*.5} ${dx*k} ${(dy+8)*k}" stroke="#0e1a17" stroke-width="${4*k}" fill="none" stroke-linecap="round"/>`).join("");
+  return `<path d="${t}" stroke="#0e1a17" stroke-width="${4.5*k}" fill="none" stroke-linecap="round"/>${fr}`;}
+function scene(kind,id){const P={backwater:{s:["#16335a","#e9875a","#ffc98b"],sun:"#ffe2b0",m1:"#3a4f73",m2:"#22344f",w:["#2a4566","#0e1d33"]},
+  hills:{s:["#24527a","#86b8d4","#e8f1ea"],sun:"#fff7dd",m1:"#5f8aa3",m2:"#2f5f4f",w:null},
+  beach:{s:["#1f7ea6","#7fc6d6","#fbe3b6"],sun:"#fff4cf",m1:"#7db9c4",m2:null,w:["#1d9bb0","#0b6175"]}}[kind];
+  let g=`<defs><linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.s[0]}"/><stop offset=".65" stop-color="${P.s[1]}"/><stop offset="1" stop-color="${P.s[2]}"/></linearGradient>
+  ${P.w?`<linearGradient id="${id}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.w[0]}"/><stop offset="1" stop-color="${P.w[1]}"/></linearGradient>`:""}</defs>
+  <rect width="400" height="300" fill="url(#${id}s)"/><circle cx="${kind==="hills"?110:285}" cy="${kind==="beach"?120:150}" r="30" fill="${P.sun}" opacity=".95"/>
+  <path d="M0 190 L50 150 L95 172 L160 112 L220 165 L280 128 L340 168 L400 140 L400 300 L0 300Z" fill="${P.m1}" opacity="${kind==="beach"?.45:.85}"/>`;
+  if(kind==="backwater"){g+=`<path d="M0 214 Q90 180 170 206 T330 200 T400 198 L400 300 L0 300Z" fill="${P.m2}"/><rect y="222" width="400" height="78" fill="url(#${id}w)"/>
+   ${[0,1,2,3,4].map(i=>`<rect x="${262+i*3}" y="${232+i*11}" width="${46-i*7}" height="2" rx="1" fill="${P.sun}" opacity="${.6-i*.1}"/>`).join("")}
+   <path d="M118 240 L262 240 L250 254 L132 254Z" fill="#1c120c"/><path d="M134 240 Q190 212 246 240Z" fill="#4a2f1c"/><path d="M150 240 Q190 222 230 240" stroke="#7a5233" stroke-width="2" fill="none"/>
+   <rect x="160" y="232" width="8" height="8" fill="#ffc98b" opacity=".85"/><rect x="190" y="230" width="8" height="10" fill="#ffc98b" opacity=".85"/><rect x="214" y="232" width="8" height="8" fill="#ffc98b" opacity=".85"/>
+   ${palm(40,232,1.1)}${palm(78,226,.8)}${palm(372,230,1)}`;}
+  if(kind==="hills"){g+=`<path d="M0 205 Q100 165 200 198 T400 185 L400 300 L0 300Z" fill="${P.m2}"/>
+   ${[0,1,2,3,4,5,6].map(i=>`<path d="M-10 ${222+i*12} Q120 ${200+i*12} 240 ${222+i*12} T420 ${214+i*12}" stroke="#4f8a5f" stroke-width="5" fill="none" opacity=".75"/>`).join("")}
+   ${[[300,200],[322,206],[344,198],[30,210],[52,216]].map(([x,y])=>`<path d="M${x} ${y-34} L${x+11} ${y} L${x-11} ${y}Z" fill="#173c2e"/>`).join("")}
+   <path d="M150 140 q20 -8 40 0" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/><path d="M200 124 q14 -6 28 0" stroke="#fff" stroke-width="2" fill="none" opacity=".6"/>`;}
+  if(kind==="beach"){g+=`<rect y="200" width="400" height="100" fill="url(#${id}w)"/>
+   ${[0,1,2].map(i=>`<path d="M0 ${222+i*14} Q50 ${216+i*14} 100 ${222+i*14} T200 ${222+i*14} T300 ${222+i*14} T400 ${222+i*14}" stroke="#bfeaf0" stroke-width="1.5" fill="none" opacity="${.6-i*.15}"/>`).join("")}
+   <path d="M0 262 Q160 236 400 258 L400 300 L0 300Z" fill="#f2d4a0"/><path d="M0 262 Q160 236 400 258" stroke="#fff" stroke-width="3" fill="none" opacity=".7"/>
+   ${palm(330,282,1.3)}${palm(370,286,.95)}<path d="M60 286 L100 286 L80 268Z" fill="#e2563d"/><path d="M80 268 L80 290" stroke="#5a3a22" stroke-width="2"/>`;}
+  const el=document.getElementById(id);if(el)el.innerHTML=g;}
+scene("backwater","heroScene");scene("backwater","sc1");scene("hills","sc2");scene("beach","sc3");
+
+/* ---------- register / login ---------- */
+let authMode="login",authMsg="";
+function showAuth(mode,msg,ok){authMode=mode||authMode;document.getElementById("app").hidden=true;document.getElementById("auth").hidden=false;
+  const A=document.getElementById("authbox");const keep={};A.querySelectorAll("input:not([type=password])").forEach(i=>keep[i.name]=i.value);const m=msg?`<p class="msg ${ok?"ok":"err"}" role="status">${esc(msg)}</p>`:"";
+  const tabsH=(authMode==="login"||authMode==="register")?`<div class="authtabs" role="tablist"><button type="button" role="tab" aria-selected="${authMode==="login"}" data-auth="login">Log in</button><button type="button" role="tab" aria-selected="${authMode==="register"}" data-auth="register">Register free</button></div>`:"";
+  let f="";
+  if(authMode==="login")f=`<form id="authForm" data-kind="login"><label class="f" for="a_email">Email<input id="a_email" name="email" type="email" required autocomplete="email"></label>
+    <label class="f" for="a_pw">Password<input id="a_pw" name="password" type="password" required autocomplete="current-password"></label>
+    <button class="primary" type="submit">Log in</button><button type="button" class="linkbtn" data-auth="forgot">Forgot password?</button></form>`;
+  if(authMode==="register")f=`<form id="authForm" data-kind="register"><label class="f" for="r_name">Your name<input id="r_name" name="name" required autocomplete="name"></label>
+    <label class="f" for="r_co">Travel company name<input id="r_co" name="company" required autocomplete="organization"></label>
+    <label class="f" for="r_ph">Mobile number<input id="r_ph" name="phone" type="tel" required autocomplete="tel"></label>
+    <label class="f" for="r_email">Email<input id="r_email" name="email" type="email" required autocomplete="email"></label>
+    <label class="f" for="r_pw">Password (at least 6 characters)<input id="r_pw" name="password" type="password" minlength="6" required autocomplete="new-password"></label>
+    <button class="primary" type="submit">Create free account</button></form>`;
+  if(authMode==="forgot")f=`<form id="authForm" data-kind="forgot"><p class="hint">Enter your email and we will send a link to set a new password.</p><label class="f" for="f_email">Email<input id="f_email" name="email" type="email" required></label>
+    <button class="primary" type="submit">Send reset link</button><button type="button" class="linkbtn" data-auth="login">Back to log in</button></form>`;
+  if(authMode==="newpass")f=`<form id="authForm" data-kind="newpass"><label class="f" for="n_pw">New password<input id="n_pw" name="password" type="password" minlength="6" required autocomplete="new-password"></label><button class="primary" type="submit">Save new password</button></form>`;
+  A.innerHTML=`<h1>${authMode==="register"?"Create your free account":"Welcome to MK Itinerary Maker"}</h1><p class="by">${authMode==="register"?"Takes a minute. You get your own MK Agent ID.":"Log in to create and save your itineraries."}</p>${tabsH}${m}${f}${sb?"":`<p class="demo">Preview mode: accounts are kept in this browser only.</p>`}`;
+  A.querySelectorAll("input:not([type=password])").forEach(i=>{if(keep[i.name])i.value=keep[i.name];});}
+document.getElementById("auth").addEventListener("click",e=>{const b=e.target.closest("[data-auth]");if(b)showAuth(b.dataset.auth);});
+document.getElementById("auth").addEventListener("submit",async e=>{e.preventDefault();const fm=e.target;const d=Object.fromEntries(new FormData(fm));const btn=fm.querySelector("button[type=submit]");btn.disabled=true;
+  try{const k=fm.dataset.kind;
+    if(k==="login"){await enterApp(await store.login(d.email.trim(),d.password));}
+    if(k==="register"){const u=await store.register({...d,email:d.email.trim()});if(u)await enterApp(u);else showAuth("login","Account created. Please open the confirmation link we emailed you, then log in.",true);}
+    if(k==="forgot"){await store.reset(d.email.trim());showAuth("login","Reset link sent. Check your email.",true);}
+    if(k==="newpass"){await store.newPassword(d.password);await enterApp(await store.current());toast("Password updated");}
+  }catch(err){showAuth(authMode,err.message==="Invalid login credentials"?"Email or password is wrong.":err.message);}finally{btn.disabled=false;}});
+
+async function enterApp(u){user=u;const a=await store.agent()||{};agentCode=a.agent_code||"";
+  profile=Object.assign(clone(DEFAULT_PROFILE),{company:a.company||DEFAULT_PROFILE.company,signName:a.name||DEFAULT_PROFILE.signName,phone:a.phone||DEFAULT_PROFILE.phone,email:a.email||u.email||DEFAULT_PROFILE.email},a.profile||{});
+  tripsMeta=await store.listTrips();trip=LS.get("nk.current."+user.id,null)||sampleTrip(profile);
+  document.getElementById("who").innerHTML=`<b>${esc(profile.company)}</b><span>Agent ID ${esc(agentCode)}</span>`;
+  document.getElementById("auth").hidden=true;document.getElementById("app").hidden=false;renderTabs();renderPane();renderSheets();}
+
+(async()=>{if(sb)sb.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY")showAuth("newpass","Choose a new password.",true);});
+  try{const u=await store.current();if(u&&!location.hash.includes("type=recovery"))await enterApp(u);else if(!u)showAuth("login");}catch(e){showAuth("login",e.message);}})();
+})();
+</script>
+</body>
+</html>
