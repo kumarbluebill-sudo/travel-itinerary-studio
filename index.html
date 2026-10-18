@@ -118,6 +118,7 @@ pre.code{background:var(--field);border:1px solid var(--line);border-radius:8px;
 .idcard b{font-size:18px;letter-spacing:.04em;font-variant-numeric:tabular-nums}
 .mbar{display:none}
 .sheets{zoom:var(--fit,1)}
+#measure{position:absolute;left:-10000px;top:0;visibility:hidden;pointer-events:none}
 .pagelabel{font-size:calc(11px / var(--fit,1))}
 @media screen and (max-width:860px){.app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr;padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
   .editor{border-right:0}
@@ -251,7 +252,7 @@ ol.terms{margin:0;padding-left:5mm;font-size:9pt;display:flex;flex-direction:col
   @page{size:A4;margin:0}
   html,body{background:#fff!important}
   :root{padding:0!important}
-  .topbar,.editor,.mbar,.pagelabel,.toast,.auth{display:none!important}
+  .topbar,.editor,.mbar,.pagelabel,.toast,.auth,#measure{display:none!important}
   .app{display:block}
   .viewer{padding:0!important;overflow:visible}
   .sheets{gap:0;width:auto;zoom:1!important}
@@ -269,7 +270,7 @@ ol.terms{margin:0;padding-left:5mm;font-size:9pt;display:flex;flex-direction:col
     <div class="hero-in">
       <div class="mk"><i>MK</i>MK Solutions</div>
       <h1>Beautiful travel itineraries in minutes</h1>
-      <p class="sub">A free tool for travel agents. Add your logo and details once, enter the trip, and send your guest a polished 6-page itinerary with photos, quotation and policies.</p>
+      <p class="sub">A free tool for travel agents. Add your logo and details once, enter the trip, and send your guest a polished multi-page itinerary with photos, quotation and policies.</p>
     </div>
   </section>
   <section class="more" aria-label="What is included">
@@ -309,6 +310,7 @@ ol.terms{margin:0;padding-left:5mm;font-size:9pt;display:flex;flex-direction:col
   </aside>
 
   <main class="viewer"><div class="sheets" id="sheets"></div></main>
+<div id="measure" aria-hidden="true"></div>
 </div>
 <nav class="mbar" id="mbar" aria-label="Quick actions" hidden>
   <button type="button" id="mvEdit" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>Edit</button>
@@ -472,7 +474,7 @@ function renderPane(){const P=document.getElementById("pane");let h="";
    <div class="grid2">${F("City","trip.hotels."+i+".city")}${F("Hotel name","trip.hotels."+i+".name")}</div>
    <div class="grid3">${F("Nights","trip.hotels."+i+".nights",{type:"number"})}${F("Room type","trip.hotels."+i+".room")}${F("Meal plan","trip.hotels."+i+".meal",{type:"select",options:["Room only","Breakfast","Breakfast & Dinner","All meals"]})}</div></div>`).join("")}
   <button type="button" data-act="addHotel">+ Add hotel</button>`;}
- if(tab==="days"){h=`<p class="hint">Each day gets its own block with a photo. Three days fit on one page.</p>`+trip.days.map((d,i)=>`<div class="card">
+ if(tab==="days"){h=`<p class="hint">Each day gets its own block with a photo. Up to three days fit on one page, and new pages are added on their own for longer trips.</p><div class="row"><label for="dayCount" style="flex:1">Number of days<input id="dayCount" type="number" min="1" max="60" inputmode="numeric" value="${trip.days.length}"></label><button type="button" data-act="setDays" style="align-self:flex-end">Set days</button></div>`+trip.days.map((d,i)=>`<div class="card">
    <div class="cardhead"><b>Day ${i+1}${trip.start?" · "+fmtDate(trip.start,i):""}</b><div class="row">
    <button type="button" class="ghost x" data-act="upDay" data-i="${i}" aria-label="Move up">↑</button>
    <button type="button" class="ghost x danger" data-act="delDay" data-i="${i}" aria-label="Remove day">✕</button></div></div>
@@ -509,12 +511,10 @@ function head(eyebrow,title){return `<div class="s-head"><div><div class="eyebro
 function foot(n,total){return `<div class="s-foot"><span>${esc(profile.company)} · ${esc(profile.phone)} · ${esc(profile.email)}</span><span>${profile.license?"Lic. "+esc(profile.license)+" · ":""}Page ${n} of ${total}</span></div>`;}
 function renderSheets(){
   const th=THEMES.find(t=>t.id===trip.theme)||THEMES[0];const T=totals();const n=nights();
-  const dayChunks=[];for(let i=0;i<trip.days.length;i+=3)dayChunks.push(trip.days.slice(i,i+3).map((d,k)=>[d,i+k]));
-  const total=2+dayChunks.length+2;let pg=0;const out=[];
+  const out=[];
   const dur=`${n}N / ${trip.days.length}D`;const pax=`${trip.adults||0} Adult${trip.adults==1?"":"s"}${+trip.children?` + ${trip.children} Child`:""}`;
   const dates=trip.start?`${fmtDate(trip.start)} – ${fmtDate(trip.start,n)}`:"Dates to be confirmed";
   // cover
-  pg++;
   if(th.cover==="overlay"){out.push(["Cover",`<section class="sheet cover t-${th.id}"><div class="cv-photo">${photo(trip.cover,trip.destination||trip.title)}<div class="cv-shade"></div>
    <div class="cv-brand">${logo()}<span class="eyebrow" style="color:#fff">${esc(profile.tagline)}</span></div>
    <div class="cv-title"><div class="eyebrow">Holiday itinerary · ${esc(dur)}</div><h1>${esc(trip.title)}</h1><p>Specially prepared for ${esc(trip.client||"you")}</p></div></div>
@@ -525,43 +525,60 @@ function renderSheets(){
    <div class="vfacts"><div><span>Prepared for</span><b>${esc(trip.client||"–")}</b></div><div><span>Duration</span><b>${esc(dur)}</b></div><div><span>Travel dates</span><b>${esc(dates)}</b></div><div><span>Travellers</span><b>${esc(pax)}</b></div></div>
    <div style="margin-top:auto;font-size:9pt;opacity:.85">${esc(profile.company)}<br>${esc(profile.phone)}<br>${esc(profile.website)}</div></div>
    <div class="cv-main"><div class="pic">${photo(trip.cover,trip.destination||trip.title)}</div><div class="cv-foot"><span>${trip.route?esc(trip.route.split(",").map(s=>s.trim()).join(" · ")):""}</span><span>${esc(profile.tagline)}</span></div></div></section>`]);}
-  // overview
-  pg++;
+  // inner pages are laid out as blocks; anything that does not fit moves to a continuation page, long tables and lists split by row
+  const H3=(t,cont)=>`<h3 style="margin-bottom:3mm">${esc(t)}${cont?" (continued)":""}</h3>`;
+  const tbl=(title,thead)=>({rows:[],render:(r,s,cont)=>`<div>${title?H3(title,cont):""}<table class="t">${thead}<tbody>${r.join("")}</tbody></table></div>`});
   const hn=trip.hotels.filter(h=>h.city||h.name);
-  out.push(["Trip overview",`<section class="sheet t-${th.id}"><div class="s-in">${head("Your journey at a glance",trip.title)}
-   ${trip.overview?`<p class="lead">${esc(trip.overview)}</p>`:""}
-   ${lines(trip.highlights).length?`<div><h3 style="margin-bottom:3mm">Trip highlights</h3><ul class="hl">${lines(trip.highlights).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
-   ${hn.length?`<div><h3 style="margin-bottom:3mm">Your hotels</h3><table class="t"><thead><tr><th>City</th><th>Hotel</th><th>Room</th><th>Meals</th><th class="num">Nights</th></tr></thead><tbody>${hn.map(h=>`<tr><td>${esc(h.city)}</td><td><b>${esc(h.name)}</b></td><td>${esc(h.room)}</td><td>${esc(h.meal)}</td><td class="num">${esc(h.nights)}</td></tr>`).join("")}</tbody></table></div>`:""}
-   <div><h3 style="margin-bottom:3mm">Day by day summary</h3><table class="t"><thead><tr><th>Day</th><th>Date</th><th>Plan</th><th>Stay</th></tr></thead><tbody>${trip.days.map((d,i)=>`<tr><td>${i+1}</td><td style="white-space:nowrap">${trip.start?esc(fmtDate(trip.start,i)):"–"}</td><td>${esc(d.title)}</td><td>${esc(d.stay||"–")}</td></tr>`).join("")}</tbody></table></div>
-   </div>${foot(pg,total)}</section>`]);
-  // days
-  dayChunks.forEach((ch,ci)=>{pg++;out.push(["Day plan "+(ci+1),`<section class="sheet t-${th.id}"><div class="s-in">${head(ci?"Day-wise plan (continued)":"Day-wise plan","Your itinerary")}
-   ${ch.map(([d,i])=>{const meals=[d.b&&"Breakfast",d.l&&"Lunch",d.d&&"Dinner"].filter(Boolean);return `<article class="day">${photo(d.img,d.title,"dimg")}
+  const ov=[];
+  if(trip.overview)ov.push({html:`<p class="lead">${esc(trip.overview)}</p>`});
+  if(lines(trip.highlights).length)ov.push({rows:lines(trip.highlights).map(x=>`<li>${esc(x)}</li>`),render:(r,s,cont)=>`<div>${H3("Trip highlights",cont)}<ul class="hl">${r.join("")}</ul></div>`});
+  if(hn.length)ov.push({...tbl("Your hotels",`<thead><tr><th>City</th><th>Hotel</th><th>Room</th><th>Meals</th><th class="num">Nights</th></tr></thead>`),rows:hn.map(h=>`<tr><td>${esc(h.city)}</td><td><b>${esc(h.name)}</b></td><td>${esc(h.room)}</td><td>${esc(h.meal)}</td><td class="num">${esc(h.nights)}</td></tr>`)});
+  ov.push({...tbl("Day by day summary",`<thead><tr><th>Day</th><th>Date</th><th>Plan</th><th>Stay</th></tr></thead>`),rows:trip.days.map((d,i)=>`<tr><td>${i+1}</td><td style="white-space:nowrap">${trip.start?esc(fmtDate(trip.start,i)):"–"}</td><td>${esc(d.title)}</td><td>${esc(d.stay||"–")}</td></tr>`)});
+  const dayBlocks=trip.days.map((d,i)=>{const meals=[d.b&&"Breakfast",d.l&&"Lunch",d.d&&"Dinner"].filter(Boolean);return {html:`<article class="day">${photo(d.img,d.title,"dimg")}
    <div><div class="dno">Day ${i+1}${trip.start?" · "+esc(fmtDate(trip.start,i)):""}</div><h3>${esc(d.title)}</h3><p>${esc(d.desc)}</p>
-   <div class="dmeta"><span><b>Meals:</b> ${meals.length?meals.map(m=>`<span class="pill">${m}</span>`).join(""):"None included"}</span>${d.stay?`<span><b>Overnight:</b> ${esc(d.stay)}</span>`:""}</div></div></article>`}).join("")}
-   </div>${foot(pg,total)}</section>`]);});
-  // quotation + inclusions
-  pg++;
-  out.push(["Quotation",`<section class="sheet t-${th.id}"><div class="s-in">${head("Quotation","Package cost")}
-   <div class="contact"><div><span>Guest</span>${esc(trip.client||"–")}</div><div><span>Travel dates</span>${esc(dates)}</div><div><span>Travellers</span>${esc(pax)}</div><div><span>Validity</span>${esc(trip.validity||"–")}</div></div>
-   <table class="t"><thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th></tr></thead><tbody>
-   ${trip.price.items.map(x=>`<tr><td>${esc(x.label)}</td><td class="num">${esc(x.qty)}</td><td class="num">${money(x.rate)}</td><td class="num">${money((+x.qty||0)*(+x.rate||0))}</td></tr>`).join("")}</tbody></table>
-   <div class="qtotal"><div class="qbox"><div><span>Sub total</span><span>${money(T.it)}</span></div>${T.disc?`<div><span>Discount</span><span>− ${money(T.disc)}</span></div>`:""}<div><span>GST @ ${esc(trip.price.gstPct||0)}%</span><span>${money(T.gst)}</span></div><div class="grand"><span>Total payable</span><span>${money(T.total)}</span></div>${T.pax?`<div><span>Approx. per person</span><span>${money(T.total/T.pax)}</span></div>`:""}</div></div>
-   <div class="cols2"><div><h3 style="margin-bottom:3mm">Inclusions</h3><ul class="ck in">${lines(trip.inclusions).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
-   <div><h3 style="margin-bottom:3mm">Exclusions</h3><ul class="ck ex">${lines(trip.exclusions).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div></div>
-   ${trip.note?`<div class="note">${esc(trip.note)}</div>`:""}
-   </div>${foot(pg,total)}</section>`]);
-  // policies
-  pg++;
-  out.push(["Policies & terms",`<section class="sheet t-${th.id}"><div class="s-in">${head("Before you travel","Policies & terms")}
-   <div class="cols2"><div><h3 style="margin-bottom:3mm">Payment terms</h3><ul class="ck in">${lines(trip.payment).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
-   <div><h3 style="margin-bottom:3mm">Bank details</h3><div class="note">${esc(profile.bank)}</div></div></div>
-   <div><h3 style="margin-bottom:3mm">Cancellation policy</h3><table class="t"><tbody>${lines(trip.cancellation).map(x=>{const m=x.split(":");return `<tr><td>${esc(m.length>1?m[0]:x)}</td><td class="num"><b>${esc(m.length>1?m.slice(1).join(":"):"")}</b></td></tr>`}).join("")}</tbody></table></div>
-   <div><h3 style="margin-bottom:3mm">Terms & conditions</h3><ol class="terms">${lines(trip.terms).map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>
-   <div class="sign"><div class="contact" style="grid-template-columns:1fr"><div><span>Office</span>${esc(profile.address)}</div>${profile.gst?`<div><span>GSTIN</span>${esc(profile.gst)}</div>`:""}</div>
-   <div class="line">For <b>${esc(profile.company)}</b><br>${esc(profile.signName)}</div></div>
-   </div>${foot(pg,total)}</section>`]);
+   <div class="dmeta"><span><b>Meals:</b> ${meals.length?meals.map(m=>`<span class="pill">${m}</span>`).join(""):"None included"}</span>${d.stay?`<span><b>Overnight:</b> ${esc(d.stay)}</span>`:""}</div></div></article>`}});
+  const qt=[{html:`<div class="contact"><div><span>Guest</span>${esc(trip.client||"–")}</div><div><span>Travel dates</span>${esc(dates)}</div><div><span>Travellers</span>${esc(pax)}</div><div><span>Validity</span>${esc(trip.validity||"–")}</div></div>`},
+   {...tbl("",`<thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th></tr></thead>`),rows:trip.price.items.map(x=>`<tr><td>${esc(x.label)}</td><td class="num">${esc(x.qty)}</td><td class="num">${money(x.rate)}</td><td class="num">${money((+x.qty||0)*(+x.rate||0))}</td></tr>`)},
+   {html:`<div class="qtotal"><div class="qbox"><div><span>Sub total</span><span>${money(T.it)}</span></div>${T.disc?`<div><span>Discount</span><span>− ${money(T.disc)}</span></div>`:""}<div><span>GST @ ${esc(trip.price.gstPct||0)}%</span><span>${money(T.gst)}</span></div><div class="grand"><span>Total payable</span><span>${money(T.total)}</span></div>${T.pax?`<div><span>Approx. per person</span><span>${money(T.total/T.pax)}</span></div>`:""}</div></div>`},
+   {html:`<div class="cols2"><div>${H3("Inclusions")}<ul class="ck in">${lines(trip.inclusions).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+   <div>${H3("Exclusions")}<ul class="ck ex">${lines(trip.exclusions).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div></div>`}];
+  if(trip.note)qt.push({html:`<div class="note">${esc(trip.note)}</div>`});
+  const po=[{html:`<div class="cols2"><div>${H3("Payment terms")}<ul class="ck in">${lines(trip.payment).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+   <div>${H3("Bank details")}<div class="note">${esc(profile.bank)}</div></div></div>`},
+   {...tbl("Cancellation policy",""),rows:lines(trip.cancellation).map(x=>{const m=x.split(":");return `<tr><td>${esc(m.length>1?m[0]:x)}</td><td class="num"><b>${esc(m.length>1?m.slice(1).join(":"):"")}</b></td></tr>`})},
+   {rows:lines(trip.terms).map(x=>`<li>${esc(x)}</li>`),render:(r,s,cont)=>`<div>${H3("Terms & conditions",cont)}<ol class="terms" start="${s+1}">${r.join("")}</ol></div>`},
+   {html:`<div class="sign"><div class="contact" style="grid-template-columns:1fr"><div><span>Office</span>${esc(profile.address)}</div>${profile.gst?`<div><span>GSTIN</span>${esc(profile.gst)}</div>`:""}</div>
+   <div class="line">For <b>${esc(profile.company)}</b><br>${esc(profile.signName)}</div></div>`}];
+  const inner=paginate(th,[
+   {label:"Trip overview",head:["Your journey at a glance",trip.title],cont:["Your journey at a glance (continued)",trip.title],blocks:ov},
+   {label:"Day plan",head:["Day-wise plan","Your itinerary"],cont:["Day-wise plan (continued)","Your itinerary"],blocks:dayBlocks,max:3,number:true},
+   {label:"Quotation",head:["Quotation","Package cost"],cont:["Quotation (continued)","Package cost"],blocks:qt},
+   {label:"Policies & terms",head:["Before you travel","Policies & terms"],cont:["Before you travel (continued)","Policies & terms"],blocks:po}]);
+  const total=1+inner.length;
+  inner.forEach(([l,h,b],k)=>out.push([l,`<section class="sheet t-${th.id}"><div class="s-in">${h}${b}</div>${foot(k+2,total)}</section>`]));
   document.getElementById("sheets").innerHTML=out.map(([l,h],i)=>`<div class="pagelabel">Page ${i+1} · ${esc(l)}</div>${h}`).join("");
+}
+// Fills each page in a hidden A4 box until it overflows. A block with rows (table, list) is split at the last row that fits.
+function paginate(th,pages){
+  const host=document.getElementById("measure"),out=[];
+  const htmlOf=(b,r=b.rows,s=b.start||0)=>b.html||b.render(r,s,!!s);
+  for(const p of pages){const q=p.blocks.slice();let part=0;
+    do{const hd=head(...(part?p.cont:p.head));
+      host.innerHTML=`<section class="sheet t-${th.id}" style="height:289mm;min-height:0"><div class="s-in">${hd}</div>${foot(1,1)}</section>`;
+      const sh=host.firstElementChild,box=sh.firstElementChild,fits=()=>sh.scrollHeight<=sh.clientHeight+1;
+      const body=[];
+      while(q.length&&!(p.max&&body.length>=p.max)){const b=q[0];
+        box.insertAdjacentHTML("beforeend",htmlOf(b));
+        if(fits()){body.push(htmlOf(b));q.shift();continue;}
+        box.lastElementChild.remove();
+        if(b.rows&&b.rows.length>1){let k=0;
+          for(let j=1;j<b.rows.length;j++){box.insertAdjacentHTML("beforeend",htmlOf(b,b.rows.slice(0,j)));const ok=fits();box.lastElementChild.remove();if(!ok)break;k=j;}
+          if(k){body.push(htmlOf(b,b.rows.slice(0,k)));q[0]={...b,rows:b.rows.slice(k),start:(b.start||0)+k};}}
+        if(!body.length){body.push(htmlOf(b));q.shift();}
+        break;}
+      out.push([p.label+(p.number?" "+(part+1):part?" (continued)":""),hd,body.join("")]);part++;
+    }while(q.length);}
+  host.innerHTML="";return out;
 }
 
 /* ---------- events ---------- */
@@ -578,6 +595,10 @@ document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)r
   const acts={
    addHotel:()=>trip.hotels.push({city:"",name:"",nights:1,room:"",meal:"Breakfast"}),delHotel:()=>trip.hotels.splice(i,1),
    addDay:()=>trip.days.push({title:"",desc:"",img:"",b:true,l:false,d:false,stay:""}),delDay:()=>trip.days.length>1&&trip.days.splice(i,1),
+   setDays:()=>{const want=Math.min(60,Math.max(1,Math.round(+document.getElementById("dayCount").value||1)));
+     while(trip.days.length<want)trip.days.push({title:"",desc:"",img:"",b:true,l:false,d:false,stay:""});
+     const extra=trip.days.slice(want);if(extra.some(d=>d.title||d.desc||d.img||d.stay)&&!b.dataset.confirm){b.dataset.confirm=1;b.textContent="Tap again to remove days";return "stop";}
+     trip.days.length=want;toast(want+" days in this trip");},
    upDay:()=>{if(i>0){const d=trip.days.splice(i,1)[0];trip.days.splice(i-1,0,d);}},
    addItem:()=>trip.price.items.push({label:"",qty:1,rate:0}),delItem:()=>trip.price.items.splice(i,1),
    applyDefaults:()=>{["inclusions","exclusions","cancellation","terms","payment"].forEach(k=>trip[k]=profile[k]);trip.price.gstPct=profile.gstPct;toast("Defaults applied to this trip");},
@@ -603,6 +624,7 @@ document.getElementById("mvPreview").onclick=()=>setMode("prev");
 document.getElementById("mSave").onclick=()=>document.getElementById("btnSave").click();
 document.getElementById("mPdf").onclick=()=>document.getElementById("btnPdf").click();
 addEventListener("resize",fitSheets);
+if(document.fonts)document.fonts.ready.then(()=>{if(!document.getElementById("app").hidden)renderSheets();});
 document.getElementById("btnPdf").onclick=()=>{const before=Date.now();window.print();if(Date.now()-before<50)toast("If no print window opened, open this tool from your website to save the PDF.");};
 
 /* ---------- illustrated travel scenes for the login page ---------- */

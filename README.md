@@ -1,6 +1,6 @@
 # MK Itinerary Maker
 
-A free tool by MK Solutions for travel agents. An agent registers, sets up their profile once (logo, company details, bank details, default policies) and gets an MK Agent ID. Then they enter a trip and download a 6-page A4 PDF itinerary: cover, trip overview, day-wise plan with photos, quotation with GST, inclusions and exclusions, and policies and terms. There are 5 themes.
+A free tool by MK Solutions for travel agents. An agent registers, sets up their profile once (logo, company details, bank details, default policies) and gets an MK Agent ID. Then they enter a trip and download an A4 PDF itinerary (6 pages for a short trip, with pages added on their own for longer trips): cover, trip overview, day-wise plan with photos, quotation with GST, inclusions and exclusions, and policies and terms. There are 5 themes.
 
 ## Files
 
