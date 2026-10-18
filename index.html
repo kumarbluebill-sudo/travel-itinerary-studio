@@ -7,7 +7,7 @@
 <title>MK Itinerary Maker</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=DM+Serif+Display&family=Karla:wght@400;600;700&family=Syne:wght@600;700;800&family=Manrope:wght@400;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Work+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=DM+Serif+Display&family=Karla:wght@400;600;700&family=Syne:wght@600;700;800&family=Manrope:wght@400;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Work+Sans:wght@400;600&family=Sora:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap">
 <style>
 /* Layout: two-pane workbench. Left = form editor in tabs, right = live A4 sheets. Stacks on phones. */
 :root{
@@ -147,6 +147,138 @@ pre.code{background:var(--field);border:1px solid var(--line);border-radius:8px;
 @media screen and (max-width:520px){.who{display:none}.pricetbl{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 40px;row-gap:6px}.pricetbl>:nth-child(4n+1){grid-column:1/-1}.pricetbl>input:nth-child(4n+1){margin-top:8px}.pricetbl>.h:first-child{display:none}.grid3{grid-template-columns:1fr 1fr}.grid3>:first-child{grid-column:1/-1}.themes{gap:8px}}
 @media (max-width:360px){.grid2{grid-template-columns:1fr}}
 
+/* ============ MK SOLUTIONS THEME (matches mksolutionsind.com) ============
+   Restyles the app UI only: colours, fonts, header, buttons, inputs, login screen and motion.
+   The itinerary sheets below keep their own 5 document themes. All motion is off under prefers-reduced-motion. */
+:root{
+  --bg:#eef3fb; --panel:#ffffff; --fg:#0f1b33; --muted:#4b587a; --line:#d3dcec;
+  --accent:#1769c2; --accent-fg:#ffffff; --field:#f7f9fd; --warn:#9a5b00;
+  --gold:#ffc914; --gold-600:#e0ae00; --navy:#061e49; --deep:#030a1c; --cyan:#38bdf8; --violet:#8b5cf6;
+  --ui:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --display:"Sora","DM Sans",system-ui,sans-serif;
+  --shadow:0 1px 2px rgb(6 30 73/.06),0 8px 24px rgb(6 30 73/.08);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#081327; --panel:#0d1c38; --fg:#f2f6ff; --muted:#b3c0dc; --line:#22365e;
+  --accent:#6aa8ec; --accent-fg:#081327; --field:#0a1730; --warn:#f0b43c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#081327; --panel:#0d1c38; --fg:#f2f6ff; --muted:#b3c0dc; --line:#22365e;
+  --accent:#6aa8ec; --accent-fg:#081327; --field:#0a1730; --warn:#f0b43c; color-scheme:dark}
+body{-webkit-font-smoothing:antialiased}
+
+/* Buttons */
+button,.btn{border-radius:10px;transition:transform .2s ease,background-color .2s ease,border-color .2s ease,box-shadow .2s ease,color .2s ease}
+button:hover{border-color:var(--accent)}
+button:active{transform:scale(.98)}
+button.primary{position:relative;overflow:hidden;background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:700;
+  box-shadow:0 10px 26px -10px rgb(255 201 20/.75)}
+button.primary:hover{background:var(--gold-600);border-color:var(--gold-600);transform:translateY(-1px)}
+button.primary::after{content:"";position:absolute;inset:0;transform:translateX(-120%) skewX(-20deg);
+  background:linear-gradient(90deg,transparent,rgb(255 255 255/.6),transparent);transition:transform .7s ease;pointer-events:none}
+button.primary:hover::after{transform:translateX(120%) skewX(-20deg)}
+button.danger{color:#c0392b}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;box-shadow:0 0 0 4px rgb(23 105 194/.2);border-color:var(--accent)}
+
+/* Inputs and cards */
+input,textarea,select{border-radius:10px;transition:border-color .2s ease,box-shadow .2s ease}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgb(23 105 194/.15);outline:none}
+.card{border-radius:14px;background:var(--panel);box-shadow:var(--shadow);transition:box-shadow .25s ease,border-color .25s ease}
+.card:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.tripitem{border-radius:12px;transition:transform .2s ease,border-color .2s ease}
+.tripitem:hover{transform:translateX(3px);border-color:var(--accent)}
+.idcard{border-radius:14px;background:linear-gradient(135deg,var(--navy),#0b2a63);border:0;color:#fff}
+.idcard b{color:var(--gold)}
+.sec-title{color:var(--accent);letter-spacing:.14em}
+.thumb{border-radius:8px}
+
+/* Header: dark glass bar like the website */
+.topbar{background:rgb(3 10 28/.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgb(255 255 255/.1);color:#fff;
+  box-shadow:0 10px 30px -12px rgb(0 0 0/.5)}
+.brand{font-family:var(--display);font-weight:800;font-size:17px;display:flex;align-items:center;gap:10px;color:#fff}
+.brand::before{content:"MK";flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;font-size:12px;font-weight:800;color:var(--navy);
+  background:linear-gradient(135deg,var(--gold),#ffe27a);box-shadow:0 0 18px rgb(255 201 20/.45)}
+.brand small{color:rgb(255 255 255/.6)}
+.topbar .who{color:rgb(255 255 255/.6)}.topbar .who b{color:#fff}
+.topbar button{background:rgb(255 255 255/.06);border-color:rgb(255 255 255/.18);color:#fff}
+.topbar button:hover{background:rgb(255 255 255/.14);border-color:rgb(255 255 255/.35)}
+.topbar button.primary{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.topbar button.primary:hover{background:var(--gold-600)}
+
+.topbar button{white-space:nowrap}
+@media (max-width:860px){.brand{font-size:15px;gap:8px}.brand::before{width:30px;height:30px;font-size:11px;border-radius:9px}}
+@media (max-width:420px){.brand{font-size:14px}.topbar .actions button{padding:8px 9px;font-size:12.5px}}
+/* Editor tabs: gradient underline */
+.editor{background:var(--panel)}
+.tab{position:relative;font-weight:600;font-size:13.5px;padding:8px 8px;transition:color .2s ease}
+.tabs{gap:0}
+input[type=file]{padding:6px;font-size:13px;color:var(--muted)}
+input[type=file]::file-selector-button{font:inherit;font-weight:600;margin-right:10px;padding:7px 12px;border-radius:8px;border:0;cursor:pointer;
+  background:linear-gradient(135deg,var(--navy),#0b2a63);color:#fff;transition:filter .2s ease}
+input[type=file]::file-selector-button:hover{filter:brightness(1.25)}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{border-bottom-color:transparent}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:3px;border-radius:3px;
+  background:linear-gradient(90deg,var(--gold),var(--cyan),var(--violet))}
+#pane>*{animation:mk-up .35s cubic-bezier(.2,.7,.2,1) both}
+.viewer{background:radial-gradient(60rem 30rem at 100% 0%,rgb(23 105 194/.08),transparent 60%),var(--bg)}
+
+/* Login / sign-up screen: tech backdrop */
+.herobg{background:radial-gradient(60rem 30rem at 85% -10%,rgb(56 189 248/.28),transparent 60%),
+  radial-gradient(50rem 28rem at -10% 110%,rgb(139 92 246/.3),transparent 60%),var(--deep)}
+.herobg>svg.scene{opacity:.35;mix-blend-mode:screen}
+.herobg::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background-image:linear-gradient(rgb(255 255 255/.06) 1px,transparent 1px),linear-gradient(90deg,rgb(255 255 255/.06) 1px,transparent 1px);
+  background-size:56px 56px;mask-image:radial-gradient(ellipse 80% 70% at 50% 40%,#000 30%,transparent 85%);animation:mk-grid 30s linear infinite}
+.herobg::after{background:linear-gradient(180deg,rgb(3 10 28/.1) 0%,rgb(3 10 28/.55) 50%,rgb(3 10 28/.9) 100%)}
+.auth{overflow-x:clip}
+.hero-in::before,.hero-in::after{content:"";position:absolute;z-index:-1;border-radius:50%;filter:blur(60px);opacity:.5;pointer-events:none;animation:mk-orb 16s ease-in-out infinite alternate}
+.hero-in::before{width:20rem;height:20rem;background:#1769c2;top:-4rem;right:0}
+.hero-in::after{width:14rem;height:14rem;background:#ffc914;opacity:.18;bottom:0;left:30%;animation-delay:-8s}
+.mk{font-family:var(--display);font-weight:800;font-size:17px}
+.mk i{background:linear-gradient(135deg,var(--gold),#ffe27a);color:var(--navy);box-shadow:0 0 22px rgb(255 201 20/.5);animation:mk-breathe 5s ease-in-out infinite}
+.hero h1{font-family:var(--display);font-weight:800;letter-spacing:-.02em;color:#fff;animation:mk-up .7s cubic-bezier(.2,.7,.2,1) .1s both}
+.hero h1 .grad{background:linear-gradient(90deg,#ffc914,#7dd3fc 35%,#a78bfa 65%,#ffc914);background-size:300% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:mk-shimmer 8s linear infinite}
+.hero .sub{animation:mk-up .7s cubic-bezier(.2,.7,.2,1) .25s both}
+.more{background:transparent}
+.feat li{animation:mk-up .6s cubic-bezier(.2,.7,.2,1) both}
+.feat li:nth-child(2){animation-delay:.05s}.feat li:nth-child(3){animation-delay:.1s}.feat li:nth-child(4){animation-delay:.15s}
+.feat li:nth-child(5){animation-delay:.2s}.feat li:nth-child(6){animation-delay:.25s}.feat li:nth-child(7){animation-delay:.3s}.feat li:nth-child(8){animation-delay:.35s}
+.feat svg{background:linear-gradient(135deg,rgb(23 105 194/.55),rgb(139 92 246/.55));stroke:#ffc914;border:1px solid rgb(255 255 255/.15)}
+.feat li b{font-family:var(--display)}
+.dest figure{border-radius:14px;transition:transform .3s ease,border-color .3s ease;backdrop-filter:blur(8px)}
+.dest figure:hover{transform:translateY(-4px);border-color:rgb(255 201 20/.5)}
+.free{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:rgb(29 122 85/.12);color:#1d7a55;letter-spacing:.1em}
+.free::before{content:"";width:7px;height:7px;border-radius:50%;background:#4fcf98;box-shadow:0 0 0 0 rgb(79 207 152/.6);animation:mk-ping 1.8s ease-out infinite}
+.authside{background:radial-gradient(40rem 20rem at 50% 0%,rgb(23 105 194/.1),transparent 70%),var(--bg)}
+.authbox{position:relative;border-radius:22px;padding:30px 26px;border:1px solid transparent;
+  background:linear-gradient(var(--panel),var(--panel)) padding-box,linear-gradient(135deg,var(--gold),var(--cyan),var(--violet)) border-box;
+  box-shadow:0 30px 60px -25px rgb(6 30 73/.45);animation:mk-up .6s cubic-bezier(.2,.7,.2,1) .15s both}
+.authbox h1{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:-.01em}
+.authtabs{border-radius:12px;padding:4px}
+.authtabs button{border-radius:9px;font-weight:600}
+.authtabs button[aria-selected="true"]{background:var(--navy);color:#fff;box-shadow:0 6px 16px -6px rgb(6 30 73/.6)}
+.linkbtn{color:var(--accent)}
+.msg.ok{color:#1d7a55}
+@media (max-width:900px){.more{background:var(--deep)}}
+
+/* Mobile bottom bar */
+.mbar{background:rgb(3 10 28/.95);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top-color:rgb(255 255 255/.1)}
+.mbar button{background:transparent;border-color:transparent;color:rgb(255 255 255/.75)}
+.mbar [aria-pressed="true"]{color:var(--gold);border-color:transparent;box-shadow:none;background:rgb(255 255 255/.08)}
+.mbar button.primary{background:var(--gold);color:var(--navy)}
+
+/* Toast */
+.toast{background:var(--navy);color:#fff;border-radius:12px;box-shadow:0 14px 30px -10px rgb(0 0 0/.5);border-left:4px solid var(--gold);animation:mk-toast .35s cubic-bezier(.2,.8,.3,1.2) both}
+
+@keyframes mk-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes mk-grid{to{background-position:56px 56px,56px 56px}}
+@keyframes mk-orb{0%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-20px) scale(1.1)}100%{transform:translate(-20px,15px) scale(.95)}}
+@keyframes mk-shimmer{to{background-position:300% 0}}
+@keyframes mk-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes mk-ping{0%{box-shadow:0 0 0 0 rgb(79 207 152/.6)}100%{box-shadow:0 0 0 10px rgb(79 207 152/0)}}
+@keyframes mk-toast{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
 /* ============ ITINERARY SHEETS (always paper, colors per theme) ============ */
 .sheet{width:210mm;min-height:297mm;background:var(--paper);color:var(--ink);font-family:var(--fb);font-size:10.5pt;line-height:1.5;
   position:relative;box-shadow:0 2px 18px rgba(0,0,0,.18);overflow:hidden;display:flex;flex-direction:column;
@@ -269,7 +401,7 @@ ol.terms{margin:0;padding-left:5mm;font-size:9pt;display:flex;flex-direction:col
   <section class="hero" aria-label="About MK Itinerary Maker">
     <div class="hero-in">
       <div class="mk"><i>MK</i>MK Solutions</div>
-      <h1>Beautiful travel itineraries in minutes</h1>
+      <h1>Beautiful travel itineraries <span class="grad">in minutes</span></h1>
       <p class="sub">A free tool for travel agents. Add your logo and details once, enter the trip, and send your guest a polished multi-page itinerary with photos, quotation and policies.</p>
     </div>
   </section>
