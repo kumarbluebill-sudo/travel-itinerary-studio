@@ -319,6 +319,7 @@ input[type=file]::file-selector-button:hover{filter:brightness(1.25)}
 .s-in{padding:13mm 16mm 12mm;flex:1;display:flex;flex-direction:column;gap:7mm}
 .s-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10mm;border-bottom:1.5px solid var(--a);padding-bottom:4mm}
 .eyebrow{font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:var(--a);font-weight:700}
+.s-credit{position:absolute;left:0;right:0;bottom:1.4mm;text-align:center;font-size:6pt;letter-spacing:.02em;color:#9aa3ad;text-decoration:none;font-family:var(--fb)}
 .s-foot{display:flex;justify-content:space-between;gap:6mm;font-size:8pt;color:#6b6b6b;border-top:1px solid var(--soft);padding:4mm 16mm 6mm;margin-top:auto}
 .logo{max-height:22mm;max-width:62mm;object-fit:contain}
 .logobadge{width:18mm;height:18mm;border-radius:50%;background:var(--p);color:#fff;display:grid;place-items:center;font-family:var(--fd);font-size:15pt}
@@ -663,7 +664,9 @@ function updateSum(){const b=document.getElementById("sumbox");if(!b)return;cons
 function photo(src,label,cls){return src?`<img class="${cls||""}" src="${src}" alt="${esc(label)}">`:`<div class="ph ${cls||""}">${esc(label||"Add a photo")}<small>Photo</small></div>`;}
 function logo(){return profile.logo?`<img class="logo" src="${profile.logo}" alt="${esc(profile.company)}">`:`<div class="logobadge">${esc((profile.company||"T").trim().charAt(0))}</div>`;}
 function head(eyebrow,title){return `<div class="s-head"><div><div class="eyebrow">${esc(eyebrow)}</div><h2>${esc(title)}</h2></div>${logo()}</div>`;}
-function foot(n,total){return `<div class="s-foot"><span>${esc(profile.company)} · ${esc(profile.phone)} · ${esc(profile.email)}</span><span>${profile.license?"Lic. "+esc(profile.license)+" · ":""}Page ${n} of ${total}</span></div>`;}
+/* Small clickable credit pinned to the bottom edge of every page; it sits inside the footer padding so page layout is unchanged. */
+const CREDIT=`<a class="s-credit" href="https://www.mksolutionsind.com/free-itinerary-maker" target="_blank" rel="noopener">Itinerary created with MK Itinerary Maker · www.mksolutionsind.com</a>`;
+function foot(n,total){return `<div class="s-foot"><span>${esc(profile.company)} · ${esc(profile.phone)} · ${esc(profile.email)}</span><span>${profile.license?"Lic. "+esc(profile.license)+" · ":""}Page ${n} of ${total}</span></div>${CREDIT}`;}
 function renderSheets(){
   const th=THEMES.find(t=>t.id===trip.theme)||THEMES[0];const T=totals();const n=nights();
   const out=[];
