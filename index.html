@@ -111,9 +111,11 @@ pre.code{background:var(--field);border:1px solid var(--line);border-radius:8px;
 .dest svg{display:block;width:100%;height:auto;aspect-ratio:4/3}
 .dest figcaption{font-size:12px;padding:7px 10px;color:rgba(255,255,255,.9)}
 .authside{grid-column:2;grid-row:1/3;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding-block:40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.authfoot{grid-column:1/-1;grid-row:3;display:flex;justify-content:center;gap:8px;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--muted);border-top:1px solid var(--line);background:var(--bg)}
+.authfoot a{color:var(--muted);text-decoration:none}.authfoot a:hover{color:var(--fg);text-decoration:underline}
 .free{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 @media (max-width:900px){.auth{grid-template-columns:minmax(0,1fr);grid-template-rows:auto}
-  .herobg{grid-row:1}.hero{grid-row:1}.authside{grid-column:1;grid-row:2;padding-block:20px 28px}.more{grid-row:3;max-width:none;background:#0f2a4a;padding-block:28px 36px}
+  .herobg{grid-row:1}.hero{grid-row:1}.authside{grid-column:1;grid-row:2;padding-block:20px 28px}.more{grid-row:3;max-width:none;background:#0f2a4a;padding-block:28px 36px}.authfoot{grid-row:4}
   .hero-in,.more{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
   .hero-in{padding-block:22px 26px;gap:14px}.mk{margin-bottom:28px}.hero .sub{font-size:15px}}
 @media (max-width:520px){.hero h1{font-size:28px}.authbox{padding:22px 16px;border-radius:12px}.authside .free{order:2}}
@@ -446,6 +448,7 @@ ol.terms{margin:0;padding-left:5mm;font-size:9pt;display:flex;flex-direction:col
       </div>
   </section>
   <div class="authside"><span class="free">100% free for travel agents</span><div class="authbox" id="authbox"></div></div>
+  <footer class="authfoot"><span>© MK Solutions</span><a id="adminLink" href="https://mkitinerarymaker.vercel.app/admin.html" hidden>· Admin</a></footer>
 </div>
 <div class="app" id="app" hidden>
   <header class="topbar">
@@ -832,6 +835,7 @@ function showAuth(mode,msg,ok){authMode=mode||authMode;document.getElementById("
   if(authMode==="newpass")f=`<form id="authForm" data-kind="newpass"><label class="f" for="n_pw">New password<input id="n_pw" name="password" type="password" minlength="6" required autocomplete="new-password"></label><button class="primary" type="submit">Save new password</button></form>`;
   A.innerHTML=`<h1>${authMode==="register"?"Create your free account":"Welcome to MK Itinerary Maker"}</h1><p class="by">${authMode==="register"?"Takes a minute. You get your own MK Agent ID.":"Log in to create and save your itineraries."}</p>${tabsH}${m}${f}${sb?"":`<p class="demo">Preview mode: accounts are kept in this browser only.</p>`}`;
   A.querySelectorAll("input:not([type=password])").forEach(i=>{if(keep[i.name])i.value=keep[i.name];});}
+document.getElementById("adminLink").hidden=!sb;
 document.getElementById("auth").addEventListener("click",e=>{const b=e.target.closest("[data-auth]");if(b)showAuth(b.dataset.auth);});
 document.getElementById("auth").addEventListener("submit",async e=>{e.preventDefault();const fm=e.target;const d=Object.fromEntries(new FormData(fm));const btn=fm.querySelector("button[type=submit]");btn.disabled=true;
   try{const k=fm.dataset.kind;
@@ -841,7 +845,9 @@ document.getElementById("auth").addEventListener("submit",async e=>{e.preventDef
     if(k==="newpass"){await store.newPassword(d.password);await enterApp(await store.current());toast("Password updated");}
   }catch(err){showAuth(authMode,err.message==="Invalid login credentials"?"Email or password is wrong.":err.message);}finally{btn.disabled=false;}});
 
-async function enterApp(u){user=u;const a=await store.agent()||{};agentCode=a.agent_code||"";
+async function enterApp(u){user=u;
+  if(sb&&(await sb.rpc("is_admin")).data===true){location.href=document.getElementById("adminLink").href;return;}
+  const a=await store.agent()||{};agentCode=a.agent_code||"";
   profile=Object.assign(clone(DEFAULT_PROFILE),{company:a.company||DEFAULT_PROFILE.company,signName:a.name||DEFAULT_PROFILE.signName,phone:a.phone||DEFAULT_PROFILE.phone,email:a.email||u.email||DEFAULT_PROFILE.email},a.profile||{});
   tripsMeta=await store.listTrips();trip=LS.get("nk.current."+user.id,null)||sampleTrip(profile);
   document.getElementById("who").innerHTML=`<b>${esc(profile.company)}</b><span>Agent ID ${esc(agentCode)}</span>`;

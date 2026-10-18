@@ -30,6 +30,7 @@ revoke execute on function public.is_admin() from public, anon;
 grant execute on function public.is_admin() to authenticated;
 
 -- everything the admin page shows, in one call. Refuses anyone who is not in public.admins.
+-- Admin accounts are left out of every count and list, so only real agencies show.
 create or replace function public.admin_overview()
 returns jsonb language plpgsql stable security definer set search_path = '' as $$
 declare result jsonb;
@@ -48,24 +49,29 @@ begin
                (select count(*) from public.pdf_downloads d where d.agent_id = a.id) as downloads,
                (select max(d.created_at) from public.pdf_downloads d where d.agent_id = a.id) as last_download
         from public.agents a join auth.users u on u.id = a.id
+        where not exists (select 1 from public.admins x where x.user_id = a.id)
       ) r), '[]'::jsonb),
     'downloads', coalesce((
       select jsonb_agg(row_to_json(r) order by r.at desc) from (
         select d.created_at as at, a.agent_code, a.company, d.trip_title, d.destination
         from public.pdf_downloads d join public.agents a on a.id = d.agent_id
+        where not exists (select 1 from public.admins x where x.user_id = d.agent_id)
         order by d.created_at desc limit 200
       ) r), '[]'::jsonb),
     'download_days', coalesce((
       select jsonb_agg(jsonb_build_object('day', day, 'n', n) order by day) from (
         select (created_at at time zone 'Asia/Kolkata')::date as day, count(*) as n
-        from public.pdf_downloads where created_at > now() - interval '30 days' group by 1
+        from public.pdf_downloads d where created_at > now() - interval '30 days'
+          and not exists (select 1 from public.admins x where x.user_id = d.agent_id) group by 1
       ) r), '[]'::jsonb),
     'signup_days', coalesce((
       select jsonb_agg(jsonb_build_object('day', day, 'n', n) order by day) from (
         select (created_at at time zone 'Asia/Kolkata')::date as day, count(*) as n
-        from public.agents where created_at > now() - interval '30 days' group by 1
+        from public.agents a where created_at > now() - interval '30 days'
+          and not exists (select 1 from public.admins x where x.user_id = a.id) group by 1
       ) r), '[]'::jsonb),
-    'total_downloads', (select count(*) from public.pdf_downloads)
+    'total_downloads', (select count(*) from public.pdf_downloads d
+      where not exists (select 1 from public.admins x where x.user_id = d.agent_id))
   ) into result;
   return result;
 end $$;
