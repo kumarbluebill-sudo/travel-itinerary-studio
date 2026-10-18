@@ -780,7 +780,10 @@ document.getElementById("mSave").onclick=()=>document.getElementById("btnSave").
 document.getElementById("mPdf").onclick=()=>document.getElementById("btnPdf").click();
 addEventListener("resize",fitSheets);
 if(document.fonts)document.fonts.ready.then(()=>{if(!document.getElementById("app").hidden)renderSheets();});
-document.getElementById("btnPdf").onclick=()=>{const before=Date.now();window.print();if(Date.now()-before<50)toast("If no print window opened, open this tool from your website to save the PDF.");};
+document.getElementById("btnPdf").onclick=()=>{logDownload();const before=Date.now();window.print();if(Date.now()-before<50)toast("If no print window opened, open this tool from your website to save the PDF.");};
+
+// counts each Download PDF press for the admin page; never blocks the download
+function logDownload(){if(!sb||!user||!trip)return;sb.from("pdf_downloads").insert({trip_id:trip.id,trip_title:trip.title||"",destination:trip.destination||""}).then(r=>{if(r.error)console.warn("download not logged:",r.error.message)},()=>{});}
 
 /* ---------- illustrated travel scenes for the login page ---------- */
 function palm(x,y,k){const t=`M${x} ${y} q${8*k} ${-38*k} ${-2*k} ${-78*k}`;const tx=x-2*k,ty=y-78*k;

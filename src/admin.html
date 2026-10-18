@@ -1,0 +1,144 @@
+<title>MK Itinerary Maker · Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
+<style>
+/* Admin page: sign in, then totals, a 30-day chart and the list of agencies. Only accounts listed in public.admins get data. */
+:root{
+  --bg:#eef1f3; --panel:#ffffff; --fg:#1d2a33; --muted:#5f6f7a; --line:#d6dde2;
+  --accent:#0f6b6f; --accent-fg:#ffffff; --field:#f7f9fa; --bar2:#c47a2c; --err:#b3261e;
+  --ui:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12181c; --panel:#1a2227; --fg:#e4eaee; --muted:#93a3ad; --line:#2c3840;
+  --accent:#4fb3b5; --accent-fg:#0c1417; --field:#141b1f; --bar2:#e0a548; --err:#f2a49c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12181c; --panel:#1a2227; --fg:#e4eaee; --muted:#93a3ad; --line:#2c3840;
+  --accent:#4fb3b5; --accent-fg:#0c1417; --field:#141b1f; --bar2:#e0a548; --err:#f2a49c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:14px;line-height:1.45}
+button,input{font:inherit}
+button{font-weight:600;border:1px solid var(--line);background:var(--field);color:var(--fg);padding:8px 12px;border-radius:8px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input{width:100%;border:1px solid var(--line);background:var(--field);color:var(--fg);padding:9px 10px;border-radius:8px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 48px}
+.top{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--panel);border-bottom:1px solid var(--line);margin-bottom:20px}
+.brand{font-weight:800;font-size:16px}
+.brand small{font-weight:600;color:var(--muted);font-size:12px;margin-left:6px}
+.who{color:var(--muted);font-size:12.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.login{max-width:380px;margin:12vh auto 0;display:flex;flex-direction:column;gap:12px}
+.login h1{font-size:20px;margin:0}
+.login label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:12.5px;color:var(--muted)}
+.msg{margin:0;font-size:13px}.msg.err{color:var(--err)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.kpi .n{font-size:30px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.kpi .l{color:var(--muted);font-size:12.5px;font-weight:600}
+.kpi .s{color:var(--muted);font-size:12px;margin-top:2px}
+h2{font-size:15px;margin:0 0 10px}
+.chart{margin-bottom:16px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-bottom:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.bars{display:grid;grid-template-columns:repeat(30,minmax(0,1fr));gap:3px;align-items:end;height:140px;border-bottom:1px solid var(--line)}
+.day{display:flex;gap:1px;align-items:end;height:100%}
+.day span{flex:1;border-radius:2px 2px 0 0;min-height:0}
+.day .a{background:var(--accent)}.day .b{background:var(--bar2)}
+.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.tools input{max-width:280px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:860px;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:700;cursor:pointer;user-select:none}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.wrapc{white-space:normal;min-width:160px}
+.tag{font-size:11px;font-weight:700;padding:2px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.tag.ok{color:var(--accent);border-color:var(--accent)}
+.empty{color:var(--muted);padding:18px 0;text-align:center}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.recent table{min-width:560px}
+a{color:var(--accent)}
+</style>
+<div class="top"><div class="brand">MK Itinerary Maker<small>Admin</small></div><div class="who" id="who" hidden></div></div>
+<div class="wrap">
+  <form class="card login" id="login" hidden>
+    <h1>Admin sign in</h1>
+    <p class="msg">Use your MK Itinerary Maker login. This page opens only for the MK Solutions admin.</p>
+    <p class="msg err" id="err" role="status" hidden></p>
+    <label for="email">Email<input id="email" name="email" type="email" autocomplete="email" required></label>
+    <label for="pw">Password<input id="pw" name="password" type="password" autocomplete="current-password" required></label>
+    <button class="primary" type="submit">Sign in</button>
+  </form>
+  <div id="dash" hidden>
+    <div class="kpis" id="kpis"></div>
+    <div class="card chart"><h2>Last 30 days</h2>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Signups</span><span><i style="background:var(--bar2)"></i>PDF downloads</span></div>
+      <div class="bars" id="bars"></div><div class="axis" id="axis"></div></div>
+    <div class="grid2">
+      <div class="card"><div class="tools"><h2 style="margin:0">Agencies</h2><input id="q" type="search" placeholder="Search name, company, phone, email or Agent ID" aria-label="Search agencies"><button type="button" id="csv">Download CSV</button></div>
+        <div class="scroll"><table id="agents"></table></div></div>
+      <div class="card recent"><h2>Recent PDF downloads</h2><div class="scroll"><table id="recent"></table></div></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const MK_CONFIG={supabaseUrl:"",supabaseAnonKey:"",siteUrl:""};
+(function(){
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sb=(MK_CONFIG.supabaseUrl&&window.supabase)?window.supabase.createClient(MK_CONFIG.supabaseUrl,MK_CONFIG.supabaseAnonKey):null;
+const IST={timeZone:"Asia/Kolkata"};
+const dt=v=>v?new Date(v).toLocaleDateString("en-GB",{...IST,day:"2-digit",month:"short",year:"numeric"}):"";
+const dtm=v=>v?new Date(v).toLocaleString("en-GB",{...IST,day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+const istDay=d=>new Date(d).toLocaleDateString("en-CA",IST);
+let data=null,sortKey="signed_up",sortDir=-1;
+
+function showLogin(msg){$("dash").hidden=true;$("who").hidden=true;$("login").hidden=false;$("err").hidden=!msg;$("err").textContent=msg||"";}
+async function load(){
+  const {data:s}=await sb.auth.getSession();const u=s.session?.user;if(!u)return showLogin();
+  const r=await sb.rpc("admin_overview");
+  if(r.error)return showLogin(r.error.code==="42501"?"This account is not the admin, so this page stays closed.":"Could not load: "+r.error.message);
+  data=r.data;$("login").hidden=true;$("dash").hidden=false;
+  $("who").hidden=false;$("who").innerHTML=`<span>${esc(u.email)}</span><button type="button" id="refresh">Refresh</button><button type="button" id="out">Sign out</button>`;
+  $("refresh").onclick=load;$("out").onclick=async()=>{await sb.auth.signOut();showLogin();};
+  render();}
+
+function render(){
+  const A=data.agents||[],now=Date.now(),wk=now-7*864e5;
+  const newWk=A.filter(a=>new Date(a.signed_up)>wk).length,conf=A.filter(a=>a.confirmed).length;
+  const dl=A.filter(a=>a.downloads>0).length,made=A.filter(a=>a.trips>0).length;
+  const dlWk=(data.download_days||[]).filter(d=>new Date(d.day+"T00:00:00+05:30")>wk-864e5).reduce((n,d)=>n+d.n,0);
+  const k=[["Agencies signed up",A.length,`${newWk} new in the last 7 days`],["Email confirmed",conf,`${A.length-conf} not confirmed yet`],
+    ["PDF downloads",data.total_downloads||0,`${dlWk} in the last 7 days`],["Agencies who downloaded",dl,A.length?`${Math.round(dl/A.length*100)}% of signups`:"No signups yet"],
+    ["Agencies with saved trips",made,""]];
+  $("kpis").innerHTML=k.map(([l,n,s])=>`<div class="card kpi"><div class="l">${l}</div><div class="n">${n.toLocaleString("en-IN")}</div>${s?`<div class="s">${s}</div>`:""}</div>`).join("");
+  const days=[];for(let i=29;i>=0;i--)days.push(istDay(now-i*864e5));
+  const su=Object.fromEntries((data.signup_days||[]).map(d=>[d.day,d.n])),dd=Object.fromEntries((data.download_days||[]).map(d=>[d.day,d.n]));
+  const mx=Math.max(1,...days.map(d=>Math.max(su[d]||0,dd[d]||0)));
+  $("bars").innerHTML=days.map(d=>`<div class="day" title="${dt(d+"T12:00:00+05:30")}: ${su[d]||0} signups, ${dd[d]||0} downloads"><span class="a" style="height:${(su[d]||0)/mx*100}%"></span><span class="b" style="height:${(dd[d]||0)/mx*100}%"></span></div>`).join("");
+  $("axis").innerHTML=`<span>${dt(days[0]+"T12:00:00+05:30")}</span><span>Today</span>`;
+  renderAgents();
+  const R=data.downloads||[];
+  $("recent").innerHTML=R.length?`<thead><tr><th>When</th><th>Agent ID</th><th>Company</th><th>Trip</th><th>Destination</th></tr></thead><tbody>${R.slice(0,50).map(d=>`<tr><td>${dtm(d.at)}</td><td>${esc(d.agent_code)}</td><td>${esc(d.company)}</td><td>${esc(d.trip_title)}</td><td>${esc(d.destination)}</td></tr>`).join("")}</tbody>`:`<tbody><tr><td class="empty">No PDF downloads recorded yet. Counting starts from today.</td></tr></tbody>`;}
+
+const COLS=[["agent_code","Agent ID"],["company","Company"],["name","Name"],["phone","Phone"],["email","Email"],["signed_up","Signed up"],["confirmed","Status"],["last_login","Last login"],["trips","Trips",1],["downloads","PDFs",1],["last_download","Last PDF"]];
+function rows(){const q=$("q").value.trim().toLowerCase();let A=(data.agents||[]).slice();
+  if(q)A=A.filter(a=>["agent_code","company","name","phone","email"].some(f=>String(a[f]||"").toLowerCase().includes(q)));
+  return A.sort((x,y)=>{const a=x[sortKey],b=y[sortKey];return (a==null)-(b==null)||(a<b?-1:a>b?1:0)*sortDir;});}
+function renderAgents(){const A=rows();
+  $("agents").innerHTML=`<thead><tr>${COLS.map(([k,l,n])=>`<th class="${n?"num":""}" data-k="${k}" aria-sort="${sortKey===k?(sortDir>0?"ascending":"descending"):"none"}">${l}${sortKey===k?(sortDir>0?" ↑":" ↓"):""}</th>`).join("")}</tr></thead>
+  <tbody>${A.length?A.map(a=>`<tr><td>${esc(a.agent_code)}</td><td class="wrapc">${esc(a.company)}</td><td>${esc(a.name)}</td><td><a href="tel:${esc(a.phone)}">${esc(a.phone)}</a></td><td>${esc(a.email)}</td><td>${dt(a.signed_up)}</td><td><span class="tag ${a.confirmed?"ok":""}">${a.confirmed?"Confirmed":"Pending"}</span></td><td>${dt(a.last_login)}</td><td class="num">${a.trips}</td><td class="num">${a.downloads}</td><td>${dt(a.last_download)}</td></tr>`).join(""):`<tr><td colspan="${COLS.length}" class="empty">${data.agents?.length?"No agency matches this search.":"No agencies have signed up yet."}</td></tr>`}</tbody>`;}
+$("agents").addEventListener("click",e=>{const th=e.target.closest("th[data-k]");if(!th)return;const k=th.dataset.k;sortDir=sortKey===k?-sortDir:(["company","name","agent_code","email"].includes(k)?1:-1);sortKey=k;renderAgents();});
+$("q").addEventListener("input",()=>renderAgents());
+$("csv").onclick=()=>{const f=["agent_code","company","name","phone","email","signed_up","confirmed","last_login","trips","downloads","last_download"];
+  const c=v=>`"${String(v??"").replace(/"/g,'""')}"`;const csv=[f.join(","),...rows().map(a=>f.map(k=>c(a[k])).join(","))].join("\n");
+  const u=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));const l=document.createElement("a");l.href=u;l.download="mk-agencies-"+istDay(Date.now())+".csv";l.click();setTimeout(()=>URL.revokeObjectURL(u),1000);};
+$("login").addEventListener("submit",async e=>{e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;
+  const r=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("pw").value});b.disabled=false;
+  if(r.error)return showLogin(r.error.message==="Invalid login credentials"?"Email or password is wrong.":r.error.message);load();});
+if(!sb){showLogin("The database keys are missing. Run sh build.sh to create admin.html.");$("login").querySelector("button").disabled=true;}else load().catch(e=>showLogin(e.message));
+})();
+</script>

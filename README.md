@@ -6,8 +6,10 @@ A free tool by MK Solutions for travel agents. An agent registers, sets up their
 
 - `index.html`: the live tool. Upload this to the website, or turn on GitHub Pages for this repo. It is generated, so edit `src/index.html` instead.
 - `src/index.html`: the source. With no database keys it runs in preview mode, where accounts stay in the browser.
-- `build.sh`: run `sh build.sh` after editing the source. It writes `index.html` with the database keys added.
+- `admin.html`: the admin page (generated from `src/admin.html`). It shows how many agencies signed up, how many PDFs they downloaded, and the full agency list with a CSV download. Only accounts listed in the `admins` table can see any data.
+- `build.sh`: run `sh build.sh` after editing the source. It writes `index.html` and `admin.html` with the database keys added.
 - `supabase/schema.sql`: database tables, row-level security and the Agent ID trigger (Supabase project "NK Itinerary Tool").
+- `supabase/admin.sql`: PDF download tracking and the admin page's data. Run it once in the Supabase SQL Editor, then run its last line with your own login email to make yourself the admin. To add or remove an admin later, add or delete a row in the `admins` table from the Supabase dashboard.
 
 ## Database setup notes
 
