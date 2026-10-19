@@ -838,7 +838,8 @@ document.getElementById("auth").addEventListener("submit",async e=>{e.preventDef
   }catch(err){showAuth(authMode,err.message==="Invalid login credentials"?"Email or password is wrong.":err.message);}finally{btn.disabled=false;}});
 
 async function enterApp(u){user=u;
-  if(sb&&(await sb.rpc("is_admin")).data===true){location.href=document.getElementById("adminLink").href;return;}
+  // the admin account has no agent profile: sign it out here and keep the agent login on screen
+  if(sb&&(await sb.rpc("is_admin")).data===true){await sb.auth.signOut();user=null;showAuth("login","This is the admin account. Use the Admin link at the bottom of this page.");return;}
   const a=await store.agent()||{};agentCode=a.agent_code||"";
   profile=Object.assign(clone(DEFAULT_PROFILE),{company:a.company||DEFAULT_PROFILE.company,signName:a.name||DEFAULT_PROFILE.signName,phone:a.phone||DEFAULT_PROFILE.phone,email:a.email||u.email||DEFAULT_PROFILE.email},a.profile||{});
   tripsMeta=await store.listTrips();trip=LS.get("nk.current."+user.id,null)||sampleTrip(profile);
