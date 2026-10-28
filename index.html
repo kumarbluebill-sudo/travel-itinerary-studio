@@ -86,6 +86,9 @@ pre.code{background:var(--field);border:1px solid var(--line);border-radius:8px;
 .triplist{display:flex;flex-direction:column;gap:6px}
 .tripitem{display:flex;justify-content:space-between;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .tripitem span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tripitem small{display:block;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:12px;margin-top:2px}
+.tripsearch{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.tripsearch .row{justify-content:space-between}
 .viewer{padding-block:24px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0;overflow-x:auto}
 .sheets{display:flex;flex-direction:column;align-items:center;gap:24px;width:max-content;margin:0 auto}
 .pagelabel{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;align-self:flex-start;margin-bottom:-16px}
@@ -550,7 +553,7 @@ const cloudStore={
   async logout(){await sb.auth.signOut()},
   async agent(){return ck(await sb.from("agents").select("*").eq("id",user.id).single())},
   async saveProfile(p){ck(await sb.from("agents").update({profile:p,company:p.company,phone:p.phone,updated_at:new Date().toISOString()}).eq("id",user.id))},
-  async listTrips(){return ck(await sb.from("trips").select("id,title,client,updated_at").order("updated_at",{ascending:false}))},
+  async listTrips(){return ck(await sb.from("trips").select("id,title,client,updated_at,tripCode:data->>tripCode,start:data->>start").order("updated_at",{ascending:false}))},
   async getTrip(id){return ck(await sb.from("trips").select("data").eq("id",id).single()).data},
   async saveTrip(t){ck(await sb.from("trips").upsert({id:t.id,agent_id:user.id,title:t.title,client:t.client,data:t,updated_at:new Date().toISOString()}))},
   async deleteTrip(id){ck(await sb.from("trips").delete().eq("id",id))}};
@@ -566,7 +569,7 @@ const localStore={
   async logout(){LS.set("nk.session","")},
   async agent(){return LS.get("nk.users",{})[user.id]},
   async saveProfile(p){const us=LS.get("nk.users",{});us[user.id].profile=p;us[user.id].company=p.company;if(!LS.set("nk.users",us))throw new Error("browser storage is full")},
-  async listTrips(){return LS.get("nk.trips."+user.id,[]).map(t=>({id:t.id,title:t.title,client:t.client,updated_at:t.updated_at}))},
+  async listTrips(){return LS.get("nk.trips."+user.id,[]).map(t=>({id:t.id,title:t.title,client:t.client,updated_at:t.updated_at,tripCode:t.tripCode,start:t.start}))},
   async getTrip(id){return clone(LS.get("nk.trips."+user.id,[]).find(t=>t.id===id))},
   async saveTrip(t){const a=LS.get("nk.trips."+user.id,[]).filter(x=>x.id!==t.id);a.unshift(Object.assign(clone(t),{updated_at:new Date().toISOString()}));if(!LS.set("nk.trips."+user.id,a))throw new Error("browser storage is full. Remove photos or old trips")},
   async deleteTrip(id){LS.set("nk.trips."+user.id,LS.get("nk.trips."+user.id,[]).filter(x=>x.id!==id))}};
@@ -582,6 +585,20 @@ function root(path){return path.startsWith("profile.")?[{profile},path]:[{trip},
 function money(n){const v=Math.round(Number(n)||0);return (profile.currency||"₹")+" "+v.toLocaleString("en-IN");}
 function fmtDate(d,add=0){if(!d)return"";const x=new Date(d+"T00:00:00");x.setDate(x.getDate()+add);return x.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});}
 function nights(){return Math.max(0,trip.days.length-1)}
+// Trip ID: TR + year + month + running number for this agent, e.g. TR2610-004
+function nextTripCode(){const d=new Date(),p="TR"+String(d.getFullYear()).slice(2)+String(d.getMonth()+1).padStart(2,"0")+"-";
+  const n=tripsMeta.map(t=>t.tripCode).concat(trip?.tripCode).reduce((m,c)=>c&&c.startsWith(p)?Math.max(m,parseInt(c.slice(p.length))||0):m,0);
+  return p+String(n+1).padStart(3,"0");}
+function ensureCode(t){if(t&&!t.tripCode)t.tripCode=nextTripCode();return t;}
+let tripQ={name:"",code:"",date:""};
+function tripMatches(t){const n=tripQ.name.trim().toLowerCase(),c=tripQ.code.trim().toLowerCase();
+  return (!n||(t.client||"").toLowerCase().includes(n))&&(!c||(t.tripCode||"").toLowerCase().includes(c))&&(!tripQ.date||t.start===tripQ.date);}
+function tripListHTML(){const hits=tripsMeta.map((t,i)=>[t,i]).filter(([t])=>tripMatches(t));
+  if(!tripsMeta.length)return `<p class="hint">No saved trips yet. Press "Save trip" at the top to keep this one.</p>`;
+  if(!hits.length)return `<p class="hint">No saved trip matches this search.</p>`;
+  return hits.map(([t,i])=>`<div class="tripitem"><span><b>${esc(t.title)}</b> · ${esc(t.client||"No guest")}<small>${esc(t.tripCode||"No Trip ID")} · ${t.start?"Departs "+esc(fmtDate(t.start)):"No departure date"}</small></span><div class="row"><button type="button" data-act="loadTrip" data-i="${i}">Load</button><button type="button" class="ghost" data-act="dupTrip" data-i="${i}">Copy</button><button type="button" class="ghost danger" data-act="delTrip" data-i="${i}">Delete</button></div></div>`).join("");}
+function tripCountText(){const on=tripQ.name||tripQ.code||tripQ.date;const k=tripsMeta.filter(tripMatches).length;
+  return on?`${k} of ${tripsMeta.length} trips`:`${tripsMeta.length} saved trip${tripsMeta.length===1?"":"s"}`;}
 function readImage(file,max,cb,png){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height));
   const c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);
   cb(png?c.toDataURL("image/png"):c.toDataURL("image/jpeg",.8));};im.src=r.result;};r.readAsDataURL(file);}
@@ -620,7 +637,7 @@ function renderPane(){const P=document.getElementById("pane");let h="";
   ${F("Terms & conditions (one per line)","profile.terms",{type:"area",rows:5})}
   ${F("Payment terms (one per line)","profile.payment",{type:"area",rows:3})}
   <button type="button" data-act="applyDefaults">Apply these defaults to the current trip</button>`;}
- if(tab==="trip"){h=`${F("Trip title","trip.title")}
+ if(tab==="trip"){h=`<div class="grid2">${F("Trip ID","trip.tripCode")}${F("Trip title","trip.title")}</div>
   <div class="grid2">${F("Destination","trip.destination")}${F("Guest name","trip.client")}</div>
   <div class="grid3">${F("Start date","trip.start",{type:"date"})}${F("Adults","trip.adults",{type:"number"})}${F("Children","trip.children",{type:"number"})}</div>
   ${F("Route (comma separated)","trip.route",{ph:"Cochin, Munnar, Thekkady"})}
@@ -656,7 +673,12 @@ function renderPane(){const P=document.getElementById("pane");let h="";
  if(tab==="theme"){h=`<div class="themes">${THEMES.map(t=>`<button type="button" class="themeopt" aria-pressed="${trip.theme===t.id}" data-theme-pick="${t.id}"><span class="swatch">${t.c.map(c=>`<i style="background:${c}"></i>`).join("")}</span><b>${t.name}</b><span class="hint">${t.cover==="split"?"Side-panel cover":"Full photo cover"}</span></button>`).join("")}</div>
   <button type="button" data-act="themeDefault">Make this my default theme</button>`;}
  if(tab==="saved"){h=`<p class="hint">Saved trips stay in your account. Load one to edit it again or reuse it for another guest.</p>
-  <div class="triplist">${tripsMeta.length?tripsMeta.map((t,i)=>`<div class="tripitem"><span><b>${esc(t.title)}</b> · ${esc(t.client||"No guest")}</span><div class="row"><button type="button" data-act="loadTrip" data-i="${i}">Load</button><button type="button" class="ghost" data-act="dupTrip" data-i="${i}">Copy</button><button type="button" class="ghost danger" data-act="delTrip" data-i="${i}">Delete</button></div></div>`).join(""):`<p class="hint">No saved trips yet. Press "Save trip" at the top to keep this one.</p>`}</div>
+  <div class="tripsearch" role="search"><div class="grid3">
+   <label class="f" for="q_name">Customer name<input id="q_name" type="search" data-q="name" value="${esc(tripQ.name)}" placeholder="Guest name"></label>
+   <label class="f" for="q_code">Trip ID<input id="q_code" type="search" data-q="code" value="${esc(tripQ.code)}" placeholder="TR2610-001"></label>
+   <label class="f" for="q_date">Departure date<input id="q_date" type="date" data-q="date" value="${esc(tripQ.date)}"></label></div>
+   <div class="row"><span class="hint" id="tripCount" aria-live="polite">${tripCountText()}</span><button type="button" class="ghost" data-act="clearQ">Clear search</button></div></div>
+  <div class="triplist" id="tripList">${tripListHTML()}</div>
   <button type="button" data-act="loadSample">Load the Kerala sample trip</button>`;}
  P.innerHTML=`<div class="pane">${h}</div>`;updateSum();}
 function updateSum(){const b=document.getElementById("sumbox");if(!b)return;const t=totals();
@@ -741,7 +763,8 @@ function paginate(th,pages){
 
 /* ---------- events ---------- */
 let rt;function refresh(){clearTimeout(rt);rt=setTimeout(()=>{renderSheets();updateSum();persist();},120);}
-document.addEventListener("input",e=>{const p=e.target.dataset.path;if(!p)return;let v=e.target.type==="checkbox"?e.target.checked:e.target.value;
+document.addEventListener("input",e=>{const q=e.target.dataset.q;if(q){tripQ[q]=e.target.value;document.getElementById("tripList").innerHTML=tripListHTML();document.getElementById("tripCount").textContent=tripCountText();return;}
+  const p=e.target.dataset.path;if(!p)return;let v=e.target.type==="checkbox"?e.target.checked:e.target.value;
   if(e.target.type==="number")v=v===""?"":Number(v);setPath(p.startsWith("profile.")?{profile}:{trip},p,v);if(p.startsWith("profile."))saveProfileSoon();refresh();});
 document.addEventListener("change",e=>{const p=e.target.dataset.img;if(!p||!e.target.files[0])return;const isLogo=p==="profile.logo";
   readImage(e.target.files[0],isLogo?500:1200,url=>{setPath(p.startsWith("profile.")?{profile}:{trip},p,url);if(isLogo)saveProfileSoon();renderPane();refresh();},isLogo);});
@@ -761,14 +784,17 @@ document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)r
    addItem:()=>trip.price.items.push({label:"",qty:1,rate:0}),delItem:()=>trip.price.items.splice(i,1),
    applyDefaults:()=>{["inclusions","exclusions","cancellation","terms","payment"].forEach(k=>trip[k]=profile[k]);trip.price.gstPct=profile.gstPct;toast("Defaults applied to this trip");},
    themeDefault:()=>{profile.theme=trip.theme;saveProfileSoon();toast("Default theme saved");},
-   loadTrip:()=>{busy(async()=>{trip=await store.getTrip(tripsMeta[i].id);toast("Trip loaded");});return "stop";},
-   dupTrip:()=>{busy(async()=>{trip=await store.getTrip(tripsMeta[i].id);trip.id=uid();trip.title+=" (copy)";trip.client="";toast("Copy created. Save it when ready.");});return "stop";},
+   loadTrip:()=>{busy(async()=>{trip=ensureCode(await store.getTrip(tripsMeta[i].id));toast("Trip loaded");});return "stop";},
+   dupTrip:()=>{busy(async()=>{trip=await store.getTrip(tripsMeta[i].id);trip.id=uid();trip.tripCode="";ensureCode(trip);trip.title+=" (copy)";trip.client="";toast("Copy created with Trip ID "+trip.tripCode+". Save it when ready.");});return "stop";},
    delTrip:()=>{if(b.dataset.confirm){busy(async()=>{await store.deleteTrip(tripsMeta[i].id);tripsMeta=await store.listTrips();toast("Trip deleted");});}else{b.dataset.confirm=1;b.textContent="Tap again to delete";}return "stop";},
-   loadSample:()=>{trip=sampleTrip(profile);toast("Sample trip loaded");}};
+   loadSample:()=>{trip=sampleTrip(profile);trip.tripCode="";ensureCode(trip);toast("Sample trip loaded");},
+   clearQ:()=>{tripQ={name:"",code:"",date:""};}};
   if(acts[a]&&acts[a]()==="stop")return;renderPane();refresh();});
-document.getElementById("btnNew").onclick=()=>{trip=blankTrip(profile);tab="trip";renderTabs();renderPane();refresh();toast("New trip started with your defaults");};
+document.getElementById("btnNew").onclick=()=>{trip=blankTrip(profile);trip.tripCode="";ensureCode(trip);tab="trip";renderTabs();renderPane();refresh();toast("New trip started with your defaults");};
 function busy(fn){fn().then(()=>{renderPane();refresh();}).catch(e=>toast("Something went wrong: "+e.message));}
-document.getElementById("btnSave").onclick=()=>busy(async()=>{await store.saveTrip(trip);tripsMeta=await store.listTrips();toast("Trip saved to your account");});
+document.getElementById("btnSave").onclick=()=>busy(async()=>{trip.tripCode=String(trip.tripCode||"").trim();ensureCode(trip);
+  if(tripsMeta.some(t=>t.id!==trip.id&&(t.tripCode||"").toLowerCase()===trip.tripCode.toLowerCase()))throw new Error("Trip ID "+trip.tripCode+" is already used by another saved trip. Change it in the Trip tab.");
+  await store.saveTrip(trip);tripsMeta=await store.listTrips();toast("Trip saved to your account");});
 document.getElementById("btnOut").onclick=async()=>{await store.logout();user=null;showAuth("login");};
 // phone layout: Edit / Preview switch, sheets scaled to the screen width
 function fitSheets(){const v=document.querySelector(".viewer"),sh=document.getElementById("sheets");const cs=getComputedStyle(v);
@@ -850,7 +876,7 @@ async function enterApp(u){user=u;
   if(sb&&(await sb.rpc("is_admin")).data===true){await sb.auth.signOut();user=null;showAuth("login","This is the admin account. Use the Admin link at the bottom of this page.");return;}
   const a=await store.agent()||{};agentCode=a.agent_code||"";
   profile=Object.assign(clone(DEFAULT_PROFILE),{company:a.company||DEFAULT_PROFILE.company,signName:a.name||DEFAULT_PROFILE.signName,phone:a.phone||DEFAULT_PROFILE.phone,email:a.email||u.email||DEFAULT_PROFILE.email},a.profile||{});
-  tripsMeta=await store.listTrips();trip=LS.get("nk.current."+user.id,null)||sampleTrip(profile);
+  tripsMeta=await store.listTrips();trip=ensureCode(LS.get("nk.current."+user.id,null)||sampleTrip(profile));
   document.getElementById("who").innerHTML=`<b>${esc(profile.company)}</b><span>Agent ID ${esc(agentCode)}</span>`;
   document.getElementById("auth").hidden=true;document.getElementById("app").hidden=false;document.getElementById("mbar").hidden=false;renderTabs();renderPane();renderSheets();setMode("edit");}
 
