@@ -83,6 +83,18 @@ pre.code{background:var(--field);border:1px solid var(--line);border-radius:8px;
 .tripitem small{display:block;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:12px;margin-top:2px}
 .tripsearch{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
 .tripsearch .row{justify-content:space-between}
+.req{color:#b3261e;font-weight:700}
+.once{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:var(--accent);color:var(--accent-fg);font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:none;vertical-align:1px}
+[aria-invalid="true"]{border-color:#b3261e!important;box-shadow:0 0 0 1px #b3261e inset}
+.guide{position:fixed;inset:0;z-index:30;background:rgba(8,20,36,.55);display:grid;place-items:center;padding:16px}
+.guidebox{background:var(--panel);color:var(--fg);border-radius:14px;max-width:520px;width:100%;max-height:calc(100vh - 32px);overflow:auto;padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.guidebox h2{margin:0;font-size:20px;line-height:1.25}
+.guidebox ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;counter-reset:g}
+.guidebox li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;counter-increment:g;font-size:13.5px;line-height:1.5}
+.guidebox li::before{content:counter(g);width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-weight:700}
+.guidebox li b{display:block}
+.guidebox .row{justify-content:flex-end}
+@media print{.guide{display:none!important}}
 .viewer{padding-block:24px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0;overflow-x:auto}
 .sheets{display:flex;flex-direction:column;align-items:center;gap:24px;width:max-content;margin:0 auto}
 .pagelabel{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;align-self:flex-start;margin-bottom:-16px}
@@ -568,7 +580,7 @@ const localStore={
 const store=sb?cloudStore:localStore;
 
 /* ---------- helpers ---------- */
-function toast(m){const t=document.getElementById("toast");t.textContent=m;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2200);}
+function toast(m,ms=2200){const t=document.getElementById("toast");t.textContent=m;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,ms);}
 function persist(){if(user&&trip)LS.set("nk.current."+user.id,trip);}
 let pst;function saveProfileSoon(){clearTimeout(pst);pst=setTimeout(()=>store.saveProfile(profile).catch(e=>toast("Profile not saved: "+e.message)),1200);}
 function getPath(o,p){return p.split(".").reduce((a,k)=>a==null?a:a[k],o)}
@@ -583,6 +595,30 @@ function nextTripCode(){const d=new Date(),p="TR"+String(d.getFullYear()).slice(
   return p+String(n+1).padStart(3,"0");}
 function ensureCode(t){if(t&&!t.tripCode)t.tripCode=nextTripCode();return t;}
 let tripQ={name:"",code:"",date:""};
+// fields that must be filled before saving or downloading; every day also needs a title
+const REQ={"profile.company":"Company name","profile.phone":"Phone","profile.email":"Email","trip.tripCode":"Trip ID","trip.title":"Trip title",
+  "trip.destination":"Destination","trip.client":"Guest name","trip.start":"Start date","trip.adults":"Adults"};
+let showMiss=false;
+function isReq(p){return p in REQ||/^trip\.days\.\d+\.title$/.test(p)}
+function isMissing(p){const v=getPath(p.startsWith("profile.")?{profile}:{trip},p);return p==="trip.adults"?!(+v>0):String(v??"").trim()==="";}
+function checkRequired(){const miss=Object.keys(REQ).concat(trip.days.map((d,i)=>"trip.days."+i+".title")).filter(isMissing);if(!miss.length)return true;
+  showMiss=true;const p=miss[0];tab=p.startsWith("profile.")?"profile":p.startsWith("trip.days.")?"days":"trip";LS.set("nk.tab",tab);renderTabs();renderPane();setMode("edit");
+  const el=document.getElementById("f_"+p.replace(/\./g,"_"));if(el){el.focus();el.scrollIntoView({block:"center"});}
+  toast("Please fill the * fields: "+miss.map(x=>REQ[x]||"Day "+(+x.split(".")[2]+1)+" title").join(", "),5000);return false;}
+// welcome guide, shown once per account right after login
+function showGuide(){if(document.getElementById("guide"))return;const g=document.createElement("div");g.className="guide";g.id="guide";
+  g.innerHTML=`<div class="guidebox" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+  <h2 id="guideTitle">Welcome to MK Itinerary Maker</h2>
+  <p class="hint">Make a branded PDF itinerary in four steps. This guide shows only once.</p>
+  <ol><li><span><b>My profile: one time only</b>Add your logo, company and bank details, and your default inclusions, exclusions, cancellation policy, terms and payment terms. They are saved to your account and added to every itinerary.</span></li>
+  <li><span><b>Trip and Day plan</b>Enter the guest, dates, hotels and the plan for each day. Fields marked <span class="req">*</span> must be filled.</span></li>
+  <li><span><b>Quotation, Policies and Theme</b>Add prices with GST, change policies for this trip only if needed, and pick a look.</span></li>
+  <li><span><b>Save trip and Download PDF</b>Find saved trips later in the Saved tab by customer name, Trip ID or departure date.</span></li></ol>
+  <div class="row"><button type="button" class="ghost" data-act="guideDone">Skip</button><button type="button" class="primary" data-act="guideDone" data-go="profile">Start with My profile</button></div></div>`;
+  document.body.appendChild(g);g.querySelector(".primary").focus();}
+function closeGuide(go){const g=document.getElementById("guide");if(g)g.remove();if(!profile.guideSeen){profile.guideSeen=true;saveProfileSoon();}
+  if(go){tab=go;LS.set("nk.tab",tab);renderTabs();renderPane();setMode("edit");}}
+addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("guide"))closeGuide();});
 function tripMatches(t){const n=tripQ.name.trim().toLowerCase(),c=tripQ.code.trim().toLowerCase();
   return (!n||(t.client||"").toLowerCase().includes(n))&&(!c||(t.tripCode||"").toLowerCase().includes(c))&&(!tripQ.date||t.start===tripQ.date);}
 function tripListHTML(){const hits=tripsMeta.map((t,i)=>[t,i]).filter(([t])=>tripMatches(t));
@@ -600,11 +636,11 @@ function totals(){const it=trip.price.items.reduce((a,i)=>a+(+i.qty||0)*(+i.rate
 /* ---------- editor ---------- */
 const TABS=[["profile","My profile"],["trip","Trip"],["days","Day plan"],["price","Quotation"],["policy","Policies"],["theme","Theme"],["saved","Saved"]];
 function F(label,path,opt={}){const v=getPath(path.startsWith("profile.")?{profile}:{trip},path)??"";const id="f_"+path.replace(/\./g,"_");
-  const type=opt.type||"text";
-  const ctrl=type==="area"?`<textarea id="${id}" data-path="${path}" rows="${opt.rows||4}" placeholder="${esc(opt.ph||"")}">${esc(v)}</textarea>`
-   :type==="select"?`<select id="${id}" data-path="${path}">${opt.options.map(o=>`<option ${o==v?"selected":""}>${esc(o)}</option>`).join("")}</select>`
-   :`<input id="${id}" type="${type}" data-path="${path}" value="${esc(v)}" placeholder="${esc(opt.ph||"")}">`;
-  return `<label class="f" for="${id}">${esc(label)}${ctrl}</label>`;}
+  const type=opt.type||"text";const rq=isReq(path),ra=rq?` aria-required="true"${showMiss&&isMissing(path)?' aria-invalid="true"':""}`:"";
+  const ctrl=type==="area"?`<textarea id="${id}" data-path="${path}"${ra} rows="${opt.rows||4}" placeholder="${esc(opt.ph||"")}">${esc(v)}</textarea>`
+   :type==="select"?`<select id="${id}" data-path="${path}"${ra}>${opt.options.map(o=>`<option ${o==v?"selected":""}>${esc(o)}</option>`).join("")}</select>`
+   :`<input id="${id}" type="${type}" data-path="${path}"${ra} value="${esc(v)}" placeholder="${esc(opt.ph||"")}">`;
+  return `<label class="f" for="${id}"><span>${esc(label)}${rq?'<span class="req" aria-hidden="true"> *</span>':""}${opt.once?'<span class="once">One time only</span>':""}</span>${ctrl}</label>`;}
 function IMG(label,path,id){const v=getPath(path.startsWith("profile.")?{profile}:{trip},path);
   return `<div class="f"><span class="hint" style="font-weight:600">${esc(label)}</span><div class="imgrow">${v?`<img class="thumb" src="${v}" alt="">`:`<span class="thumb"></span>`}
   <input id="${id}" type="file" accept="image/*" data-img="${path}">${v?`<button type="button" class="ghost x" data-clear="${path}" aria-label="Remove image">✕</button>`:""}</div></div>`;}
@@ -613,7 +649,7 @@ function renderTabs(){const el=document.getElementById("tabs");el.innerHTML=TABS
   const on=el.querySelector('[aria-selected="true"]');if(on&&el.scrollWidth>el.clientWidth)el.scrollLeft=on.offsetLeft-(el.clientWidth-on.offsetWidth)/2;}
 function renderPane(){const P=document.getElementById("pane");let h="";
  if(tab==="profile"){h=`<div class="idcard"><div><span class="hint">Your MK Agent ID</span><br><b>${esc(agentCode)}</b></div><span class="hint">${esc(user?.email||"")}</span></div>
-  <p class="hint">Fill this once. Your logo, contact, bank details and default policies are saved to your account and added to every new itinerary.</p>
+  <p class="hint">Fill this once. Your logo, contact, bank details and default policies are saved to your account and added to every new itinerary. Fields marked <span class="req">*</span> must be filled.</p>
   ${IMG("Company logo (PNG with transparent background works best)","profile.logo","img_logo")}
   ${F("Company name","profile.company")}${F("Tagline","profile.tagline")}
   <div class="grid2">${F("Phone","profile.phone")}${F("Email","profile.email")}</div>
@@ -622,14 +658,17 @@ function renderPane(){const P=document.getElementById("pane");let h="";
   <div class="grid2">${F("Signature name","profile.signName")}${F("Licence / registration no.","profile.license",{ph:"Optional"})}</div>
   <div class="grid2">${F("Currency symbol","profile.currency")}${F("Default GST %","profile.gstPct",{type:"number"})}</div>
   ${F("Bank / UPI details","profile.bank",{type:"area",rows:5})}
-  <p class="sec-title">Default text for new trips</p>
-  ${F("Inclusions (one per line)","profile.inclusions",{type:"area",rows:5})}
-  ${F("Exclusions (one per line)","profile.exclusions",{type:"area",rows:5})}
-  ${F("Cancellation policy (one per line)","profile.cancellation",{type:"area",rows:4})}
-  ${F("Terms & conditions (one per line)","profile.terms",{type:"area",rows:5})}
-  ${F("Payment terms (one per line)","profile.payment",{type:"area",rows:3})}
-  <button type="button" data-act="applyDefaults">Apply these defaults to the current trip</button>`;}
- if(tab==="trip"){h=`<div class="grid2">${F("Trip ID","trip.tripCode")}${F("Trip title","trip.title")}</div>
+  <p class="sec-title">Default text for every itinerary <span class="once">One time only</span></p>
+  <p class="hint">Fill these one time only. They are saved to your account and added to every itinerary, so you never type them again. To change them for a single trip, use the Policies tab.</p>
+  ${F("Inclusions (one per line)","profile.inclusions",{type:"area",rows:5,once:1})}
+  ${F("Exclusions (one per line)","profile.exclusions",{type:"area",rows:5,once:1})}
+  ${F("Cancellation policy (one per line)","profile.cancellation",{type:"area",rows:4,once:1})}
+  ${F("Terms & conditions (one per line)","profile.terms",{type:"area",rows:5,once:1})}
+  ${F("Payment terms (one per line)","profile.payment",{type:"area",rows:3,once:1})}
+  <button type="button" class="primary" data-act="saveDefaults">Save my defaults</button>
+  <button type="button" data-act="applyDefaults">Apply these defaults to the current trip</button>
+  <button type="button" class="ghost" data-act="showGuide">Show the welcome guide again</button>`;}
+ if(tab==="trip"){h=`<p class="hint">Fields marked <span class="req">*</span> must be filled before you save the trip or download the PDF.</p><div class="grid2">${F("Trip ID","trip.tripCode")}${F("Trip title","trip.title")}</div>
   <div class="grid2">${F("Destination","trip.destination")}${F("Guest name","trip.client")}</div>
   <div class="grid3">${F("Start date","trip.start",{type:"date"})}${F("Adults","trip.adults",{type:"number"})}${F("Children","trip.children",{type:"number"})}</div>
   ${F("Route (comma separated)","trip.route",{ph:"Cochin, Munnar, Thekkady"})}
@@ -757,7 +796,9 @@ function paginate(th,pages){
 let rt;function refresh(){clearTimeout(rt);rt=setTimeout(()=>{renderSheets();updateSum();persist();},120);}
 document.addEventListener("input",e=>{const q=e.target.dataset.q;if(q){tripQ[q]=e.target.value;document.getElementById("tripList").innerHTML=tripListHTML();document.getElementById("tripCount").textContent=tripCountText();return;}
   const p=e.target.dataset.path;if(!p)return;let v=e.target.type==="checkbox"?e.target.checked:e.target.value;
-  if(e.target.type==="number")v=v===""?"":Number(v);setPath(p.startsWith("profile.")?{profile}:{trip},p,v);if(p.startsWith("profile."))saveProfileSoon();refresh();});
+  if(e.target.type==="number")v=v===""?"":Number(v);
+  // a default policy edited in My profile also updates the current trip, unless that trip was changed by hand
+  const dk=(p.match(/^profile\.(inclusions|exclusions|cancellation|terms|payment)$/)||[])[1];if(dk&&trip&&trip[dk]===profile[dk])trip[dk]=v;setPath(p.startsWith("profile.")?{profile}:{trip},p,v);if(p.startsWith("profile."))saveProfileSoon();if(showMiss&&isReq(p))e.target.setAttribute("aria-invalid",isMissing(p));refresh();});
 document.addEventListener("change",e=>{const p=e.target.dataset.img;if(!p||!e.target.files[0])return;const isLogo=p==="profile.logo";
   readImage(e.target.files[0],isLogo?500:1200,url=>{setPath(p.startsWith("profile.")?{profile}:{trip},p,url);if(isLogo)saveProfileSoon();renderPane();refresh();},isLogo);});
 document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.i;
@@ -780,13 +821,16 @@ document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)r
    dupTrip:()=>{busy(async()=>{trip=await store.getTrip(tripsMeta[i].id);trip.id=uid();trip.tripCode="";ensureCode(trip);trip.title+=" (copy)";trip.client="";toast("Copy created with Trip ID "+trip.tripCode+". Save it when ready.");});return "stop";},
    delTrip:()=>{if(b.dataset.confirm){busy(async()=>{await store.deleteTrip(tripsMeta[i].id);tripsMeta=await store.listTrips();toast("Trip deleted");});}else{b.dataset.confirm=1;b.textContent="Tap again to delete";}return "stop";},
    loadSample:()=>{trip=sampleTrip(profile);trip.tripCode="";ensureCode(trip);toast("Sample trip loaded");},
-   clearQ:()=>{tripQ={name:"",code:"",date:""};}};
+   clearQ:()=>{tripQ={name:"",code:"",date:""};},
+   saveDefaults:()=>{busy(async()=>{clearTimeout(pst);await store.saveProfile(profile);toast("Defaults saved. They are added to every itinerary.",3000);});return "stop";},
+   showGuide:()=>{showGuide();return "stop";},
+   guideDone:()=>{closeGuide(b.dataset.go);return "stop";}};
   if(acts[a]&&acts[a]()==="stop")return;renderPane();refresh();});
 document.getElementById("btnNew").onclick=()=>{trip=blankTrip(profile);trip.tripCode="";ensureCode(trip);tab="trip";renderTabs();renderPane();refresh();toast("New trip started with your defaults");};
 function busy(fn){fn().then(()=>{renderPane();refresh();}).catch(e=>toast("Something went wrong: "+e.message));}
-document.getElementById("btnSave").onclick=()=>busy(async()=>{trip.tripCode=String(trip.tripCode||"").trim();ensureCode(trip);
+document.getElementById("btnSave").onclick=()=>{trip.tripCode=String(trip.tripCode||"").trim();ensureCode(trip);if(!checkRequired())return;busy(async()=>{
   if(tripsMeta.some(t=>t.id!==trip.id&&(t.tripCode||"").toLowerCase()===trip.tripCode.toLowerCase()))throw new Error("Trip ID "+trip.tripCode+" is already used by another saved trip. Change it in the Trip tab.");
-  await store.saveTrip(trip);tripsMeta=await store.listTrips();toast("Trip saved to your account");});
+  await store.saveTrip(trip);tripsMeta=await store.listTrips();toast("Trip saved to your account");});};
 document.getElementById("btnOut").onclick=async()=>{await store.logout();user=null;showAuth("login");};
 // phone layout: Edit / Preview switch, sheets scaled to the screen width
 function fitSheets(){const v=document.querySelector(".viewer"),sh=document.getElementById("sheets");const cs=getComputedStyle(v);
@@ -801,7 +845,7 @@ document.getElementById("mSave").onclick=()=>document.getElementById("btnSave").
 document.getElementById("mPdf").onclick=()=>document.getElementById("btnPdf").click();
 addEventListener("resize",fitSheets);
 if(document.fonts)document.fonts.ready.then(()=>{if(!document.getElementById("app").hidden)renderSheets();});
-document.getElementById("btnPdf").onclick=()=>{logDownload();const before=Date.now();window.print();if(Date.now()-before<50)toast("If no print window opened, open this tool from your website to save the PDF.");};
+document.getElementById("btnPdf").onclick=()=>{if(!checkRequired())return;logDownload();const before=Date.now();window.print();if(Date.now()-before<50)toast("If no print window opened, open this tool from your website to save the PDF.");};
 
 // counts each Download PDF press for the admin page; never blocks the download
 function logDownload(){if(!sb||!user||!trip)return;sb.from("pdf_downloads").insert({trip_id:trip.id,trip_title:trip.title||"",destination:trip.destination||""}).then(r=>{if(r.error)console.warn("download not logged:",r.error.message)},()=>{});}
@@ -839,14 +883,14 @@ function showAuth(mode,msg,ok){authMode=mode||authMode;document.getElementById("
   const A=document.getElementById("authbox");const keep={};A.querySelectorAll("input:not([type=password])").forEach(i=>keep[i.name]=i.value);const m=msg?`<p class="msg ${ok?"ok":"err"}" role="status">${esc(msg)}</p>`:"";
   const tabsH=(authMode==="login"||authMode==="register")?`<div class="authtabs" role="tablist"><button type="button" role="tab" aria-selected="${authMode==="login"}" data-auth="login">Log in</button><button type="button" role="tab" aria-selected="${authMode==="register"}" data-auth="register">Register free</button></div>`:"";
   let f="";
-  if(authMode==="login")f=`<form id="authForm" data-kind="login"><label class="f" for="a_email">Email<input id="a_email" name="email" type="email" required autocomplete="email"></label>
-    <label class="f" for="a_pw">Password<input id="a_pw" name="password" type="password" required autocomplete="current-password"></label>
+  if(authMode==="login")f=`<form id="authForm" data-kind="login"><label class="f" for="a_email"><span>Email<span class="req" aria-hidden="true"> *</span></span><input id="a_email" name="email" type="email" required autocomplete="email"></label>
+    <label class="f" for="a_pw"><span>Password<span class="req" aria-hidden="true"> *</span></span><input id="a_pw" name="password" type="password" required autocomplete="current-password"></label>
     <button class="primary" type="submit">Log in</button><button type="button" class="linkbtn" data-auth="forgot">Forgot password?</button></form>`;
-  if(authMode==="register")f=`<form id="authForm" data-kind="register"><label class="f" for="r_name">Your name<input id="r_name" name="name" required autocomplete="name"></label>
-    <label class="f" for="r_co">Travel company name<input id="r_co" name="company" required autocomplete="organization"></label>
-    <label class="f" for="r_ph">Mobile number<input id="r_ph" name="phone" type="tel" required autocomplete="tel"></label>
-    <label class="f" for="r_email">Email<input id="r_email" name="email" type="email" required autocomplete="email"></label>
-    <label class="f" for="r_pw">Password (at least 6 characters)<input id="r_pw" name="password" type="password" minlength="6" required autocomplete="new-password"></label>
+  if(authMode==="register")f=`<form id="authForm" data-kind="register"><label class="f" for="r_name"><span>Your name<span class="req" aria-hidden="true"> *</span></span><input id="r_name" name="name" required autocomplete="name"></label>
+    <label class="f" for="r_co"><span>Travel company name<span class="req" aria-hidden="true"> *</span></span><input id="r_co" name="company" required autocomplete="organization"></label>
+    <label class="f" for="r_ph"><span>Mobile number<span class="req" aria-hidden="true"> *</span></span><input id="r_ph" name="phone" type="tel" required autocomplete="tel"></label>
+    <label class="f" for="r_email"><span>Email<span class="req" aria-hidden="true"> *</span></span><input id="r_email" name="email" type="email" required autocomplete="email"></label>
+    <label class="f" for="r_pw"><span>Password (at least 6 characters)<span class="req" aria-hidden="true"> *</span></span><input id="r_pw" name="password" type="password" minlength="6" required autocomplete="new-password"></label>
     <button class="primary" type="submit">Create free account</button></form>`;
   if(authMode==="forgot")f=`<form id="authForm" data-kind="forgot"><p class="hint">Enter your email and we will send a link to set a new password.</p><label class="f" for="f_email">Email<input id="f_email" name="email" type="email" required></label>
     <button class="primary" type="submit">Send reset link</button><button type="button" class="linkbtn" data-auth="login">Back to log in</button></form>`;
@@ -870,7 +914,7 @@ async function enterApp(u){user=u;
   profile=Object.assign(clone(DEFAULT_PROFILE),{company:a.company||DEFAULT_PROFILE.company,signName:a.name||DEFAULT_PROFILE.signName,phone:a.phone||DEFAULT_PROFILE.phone,email:a.email||u.email||DEFAULT_PROFILE.email},a.profile||{});
   tripsMeta=await store.listTrips();trip=ensureCode(LS.get("nk.current."+user.id,null)||sampleTrip(profile));
   document.getElementById("who").innerHTML=`<b>${esc(profile.company)}</b><span>Agent ID ${esc(agentCode)}</span>`;
-  document.getElementById("auth").hidden=true;document.getElementById("app").hidden=false;document.getElementById("mbar").hidden=false;renderTabs();renderPane();renderSheets();setMode("edit");}
+  document.getElementById("auth").hidden=true;document.getElementById("app").hidden=false;document.getElementById("mbar").hidden=false;renderTabs();renderPane();renderSheets();setMode("edit");if(!profile.guideSeen)showGuide();}
 
 (async()=>{if(sb)sb.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY")showAuth("newpass","Choose a new password.",true);});
   try{const u=await store.current();if(u&&!location.hash.includes("type=recovery"))await enterApp(u);else if(!u)showAuth("login");}catch(e){showAuth("login",e.message);}})();
